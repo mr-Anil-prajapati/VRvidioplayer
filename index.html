@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Video.js Local Upload Player</title>
+
+  <!-- Video.js CSS -->
+  <link href="https://vjs.zencdn.net/8.10.0/video-js.css" rel="stylesheet" />
+
+</head>
+
+<body>
+
+<h2>Upload Video and Play</h2>
+
+<!-- Upload button -->
+<input type="file" id="videoUpload" accept="video/*">
+
+<br><br>
+
+<!-- Video Player -->
+<video
+  id="my-video"
+  class="video-js vjs-default-skin"
+  controls
+  preload="auto"
+  width="640"
+  height="360">
+</video>
+
+<!-- Video.js Script -->
+<script src="https://vjs.zencdn.net/8.10.0/video.min.js"></script>
+
+<script>
+  // Initialize player
+  var player = videojs('my-video');
+
+  // Upload event
+  document.getElementById('videoUpload').addEventListener('change', function(event) {
+
+    var file = event.target.files[0];
+
+    if(file) {
+      var videoURL = URL.createObjectURL(file);
+
+      player.src({
+        src: videoURL,
+        type: file.type
+      });
+
+      player.play();
+    }
+  });
+</script>
+
+</body>
+</html>
