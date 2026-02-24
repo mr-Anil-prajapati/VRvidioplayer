@@ -1,39 +1,26 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Simple Video Server Player</title>
+<title>Video Server</title>
 
 <style>
-body{
-    background:#111;
-    color:white;
-    text-align:center;
-    font-family:Arial;
-}
-
-video{
-    width:80%;
-    margin-top:20px;
-}
-
-#list a{
-    display:block;
-    padding:8px;
-    margin:5px;
-    background:#222;
-    color:white;
-    text-decoration:none;
+body{background:#111;color:white;text-align:center;font-family:Arial;}
+video{width:80%;margin-top:20px;}
+a{
+ display:block;
+ margin:5px;
+ padding:10px;
+ background:#222;
+ color:white;
+ text-decoration:none;
+ cursor:pointer;
 }
 </style>
 </head>
 
 <body>
 
-<h2>Video Server Player</h2>
-
-Server URL:
-<input id="server" value="http://172.21.127.70:8000/">
-<button onclick="loadServer()">Load</button>
+<h2>Video List Player</h2>
 
 <div id="list"></div>
 
@@ -41,16 +28,32 @@ Server URL:
 
 <script>
 
-function loadServer(){
+fetch("./")
+.then(r => r.text())
+.then(data => {
 
-    let server = document.getElementById("server").value;
+    let matches = data.match(/href="([^"]+\.mp4)"/g);
 
-    // open server directory in new tab
-    window.open(server, "_blank");
+    let list=document.getElementById("list");
 
-    alert("Open server page.\nRight click video link → Copy link → paste below.");
+    if(matches){
+        matches.forEach(item => {
 
-}
+            let file=item.replace('href="','').replace('"','');
+
+            let a=document.createElement("a");
+            a.innerText=file;
+
+            a.onclick=function(){
+                document.getElementById("player").src=file;
+            }
+
+            list.appendChild(a);
+
+        });
+    }
+
+});
 
 </script>
 
