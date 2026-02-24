@@ -1,40 +1,39 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Video Browser</title>
+<title>Simple Video Server Player</title>
 
 <style>
 body{
     background:#111;
     color:white;
-    font-family:Arial;
     text-align:center;
+    font-family:Arial;
 }
 
-#list button{
-    display:block;
-    width:80%;
-    margin:5px auto;
-    padding:10px;
-    background:#222;
-    color:white;
-    border:none;
-    cursor:pointer;
-}
 video{
     width:80%;
     margin-top:20px;
+}
+
+#list a{
+    display:block;
+    padding:8px;
+    margin:5px;
+    background:#222;
+    color:white;
+    text-decoration:none;
 }
 </style>
 </head>
 
 <body>
 
-<h2>Simple Video Server Player</h2>
+<h2>Video Server Player</h2>
 
 Server URL:
 <input id="server" value="http://172.21.127.70:8000/">
-<button onclick="loadVideos()">Load Videos</button>
+<button onclick="loadServer()">Load</button>
 
 <div id="list"></div>
 
@@ -42,35 +41,15 @@ Server URL:
 
 <script>
 
-async function loadVideos(){
+function loadServer(){
 
     let server = document.getElementById("server").value;
 
-    let response = await fetch(server);
-    let text = await response.text();
+    // open server directory in new tab
+    window.open(server, "_blank");
 
-    // find mp4 files from directory listing
-    let matches = text.match(/href="([^"]+\.mp4)"/g);
+    alert("Open server page.\nRight click video link → Copy link → paste below.");
 
-    let listDiv = document.getElementById("list");
-    listDiv.innerHTML="";
-
-    if(matches){
-        matches.forEach(item => {
-
-            let file = item.replace('href="','').replace('"','');
-
-            let btn = document.createElement("button");
-            btn.innerText = file;
-
-            btn.onclick = function(){
-                document.getElementById("player").src = server + file;
-            }
-
-            listDiv.appendChild(btn);
-
-        });
-    }
 }
 
 </script>
