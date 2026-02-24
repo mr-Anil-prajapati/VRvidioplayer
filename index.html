@@ -1,16 +1,45 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Video Server</title>
+<title>Video Server Player</title>
+<style>
+body {
+    background:#111;
+    color:white;
+    text-align:center;
+    font-family:Arial;
+}
+input, button {
+    padding:6px;
+    margin:5px;
+}
+video {
+    width:80%;
+    margin-top:20px;
+    border-radius:10px;
+}
+</style>
 </head>
+<body>
 
-<body style="background:black;color:white;text-align:center;">
+<h2>Video Player - 172.21.127.70:8000</h2>
 
-<h2>Video Server</h2>
+File Name:
+<input type="text" id="file" placeholder="videos/video1.mp4">
 
-<video width="80%" controls>
-  <source src="video.mp4" type="video/mp4">
-</video>
+<button onclick="loadVideo()">Play</button>
+
+<br>
+
+<video id="player" controls></video>
+
+<script>
+function loadVideo(){
+    let file = document.getElementById("file").value;
+    let url = "http://172.21.127.70:8000/" + file;
+    document.getElementById("player").src = url;
+}
+</script>
 
 </body>
 </html>
