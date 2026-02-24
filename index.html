@@ -1,44 +1,78 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Video Server Player</title>
+<title>Video Browser</title>
+
 <style>
-body {
+body{
     background:#111;
     color:white;
-    text-align:center;
     font-family:Arial;
+    text-align:center;
 }
-input, button {
-    padding:6px;
-    margin:5px;
+
+#list button{
+    display:block;
+    width:80%;
+    margin:5px auto;
+    padding:10px;
+    background:#222;
+    color:white;
+    border:none;
+    cursor:pointer;
 }
-video {
+video{
     width:80%;
     margin-top:20px;
-    border-radius:10px;
 }
 </style>
 </head>
+
 <body>
 
-<h2>Video Player - 172.21.127.70:8000</h2>
+<h2>Simple Video Server Player</h2>
 
-File Name:
-<input type="text" id="file" placeholder="videos/video1.mp4">
+Server URL:
+<input id="server" value="http://172.21.127.70:8000/">
+<button onclick="loadVideos()">Load Videos</button>
 
-<button onclick="loadVideo()">Play</button>
-
-<br>
+<div id="list"></div>
 
 <video id="player" controls></video>
 
 <script>
-function loadVideo(){
-    let file = document.getElementById("file").value;
-    let url = "http://172.21.127.70:8000/" + file;
-    document.getElementById("player").src = url;
+
+async function loadVideos(){
+
+    let server = document.getElementById("server").value;
+
+    let response = await fetch(server);
+    let text = await response.text();
+
+    // find mp4 files from directory listing
+    let matches = text.match(/href="([^"]+\.mp4)"/g);
+
+    let listDiv = document.getElementById("list");
+    listDiv.innerHTML="";
+
+    if(matches){
+        matches.forEach(item => {
+
+            let file = item.replace('href="','').replace('"','');
+
+            let btn = document.createElement("button");
+            btn.innerText = file;
+
+            btn.onclick = function(){
+                document.getElementById("player").src = server + file;
+            }
+
+            listDiv.appendChild(btn);
+
+        });
+    }
 }
+
 </script>
 
 </body>
