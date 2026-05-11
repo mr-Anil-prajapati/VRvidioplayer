@@ -1,61 +1,132 @@
 <!DOCTYPE html>
-<html>
-<head>
-<title>Video Server</title>
+<html lang="en">
 
-<style>
-body{background:#111;color:white;text-align:center;font-family:Arial;}
-video{width:80%;margin-top:20px;}
-a{
- display:block;
- margin:5px;
- padding:10px;
- background:#222;
- color:white;
- text-decoration:none;
- cursor:pointer;
-}
-</style>
+<head>
+  <meta charset="UTF-8">
+  <title>VR / Normal Video Player</title>
+  <link href="https://vjs.zencdn.net/8.10.0/video-js.css" rel="stylesheet" />
+  <link href="https://unpkg.com/videojs-vr/dist/videojs-vr.css" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
-<h2>Video List Player</h2>
+  <!-- ── Controls Bar (top) ── -->
+  <div class="controls-bar">
 
-<div id="list"></div>
+    <!-- Playback -->
+    <button class="ctrl-btn" id="prevBtn">⏮</button>
+    <button class="ctrl-btn" id="skipBackBtn">⏪10s</button>
+    <button class="ctrl-btn" id="skipFwdBtn">10s⏩</button>
+    <button class="ctrl-btn" id="nextBtn">⏭</button>
 
-<video id="player" controls></video>
+    <select id="speedSelect" class="size-input" title="Playback Speed"
+      style="width: auto; cursor: pointer; margin-left: 4px;">
+      <option value="0.25">0.25x</option>
+      <option value="0.5">0.5x</option>
+      <option value="0.75">0.75x</option>
+      <option value="1" selected>1x Normal</option>
+      <option value="1.25">1.25x</option>
+      <option value="1.5">1.5x</option>
+      <option value="2">2x</option>
+      <option value="3">3x</option>
+      <option value="4">4x</option>
+    </select>
 
-<script>
+    <div class="divider"></div>
 
-fetch("./")
-.then(r => r.text())
-.then(data => {
+    <button class="ctrl-btn" id="modeBtn">🔄 VR Mode</button>
+    <!-- hidden file pickers -->
+    <input type="file" id="folderPicker" webkitdirectory directory multiple accept="video/*,.mov,.mp4,.webm,.ogg,.m4v"
+      style="display:none;">
+    <input type="file" id="quickPicker" multiple accept="video/*,.mov,.mp4,.webm,.ogg,.m4v" style="display:none;">
 
-    let matches = data.match(/href="([^"]+\.mp4)"/g);
+    <div class="divider"></div>
 
-    let list=document.getElementById("list");
+    <!-- Cloud / API load -->
+    <div class="size-group" style="align-items: stretch; gap: 6px;">
+      <textarea id="apiUrlInput" class="size-input" placeholder="Video URL (one per line for multiple)"
+        style="flex:1; min-width: 220px; height: 60px; resize: vertical;"></textarea>
+      <div style="display: flex; flex-direction: column; gap: 4px;">
+        <button class="ctrl-btn" id="loadUrlBtn">☁️ Load</button>
+        <button class="ctrl-btn" id="loadAllBtn">📥 Load All</button>
+      </div>
+    </div>
 
-    if(matches){
-        matches.forEach(item => {
+    <div class="divider"></div>
 
-            let file=item.replace('href="','').replace('"','');
+    <!-- Auto detected resolution badge -->
+    <span id="resBadge">📐 No Video</span>
 
-            let a=document.createElement("a");
-            a.innerText=file;
+    <!-- Manual override -->
+    <div class="size-group">
+      <label>W×H:</label>
+      <input class="size-input" type="number" id="inputW" placeholder="W" min="200" max="3840">
+      <span class="size-sep">×</span>
+      <input class="size-input" type="number" id="inputH" placeholder="H" min="100" max="2160">
+      <button class="ctrl-btn" id="applyResBtn">✅</button>
+      <button class="ctrl-btn" id="fitResBtn">🔲 Auto</button>
+    </div>
 
-            a.onclick=function(){
-                document.getElementById("player").src=file;
-            }
+    <div class="divider"></div>
 
-            list.appendChild(a);
+    <!-- Rotate -->
+    <button class="ctrl-btn" id="rotateBtn">🔃 Rotate 0°</button>
 
-        });
-    }
+    <div class="divider"></div>
 
-});
+    <!-- Zoom -->
+    <div class="zoom-group">
+      <span id="zoomLabel">🔍 100%</span>
+      <button class="ctrl-btn zoom-btn" id="zoomOutBtn">➖</button>
+      <button class="ctrl-btn zoom-btn" id="zoomResetBtn">⟳</button>
+      <button class="ctrl-btn zoom-btn" id="zoomInBtn">➕</button>
+    </div>
 
-</script>
+  </div>
 
+  <!-- ── Main Area ── -->
+  <div class="main-area">
+
+    <div class="player-section">
+      <div id="video-container"></div>
+    </div>
+
+    <div class="sidebar">
+      <!-- Scan Panel -->
+      <div class="scan-panel">
+        <div class="scan-panel-title">
+          📁 PC Video Finder
+          <span class="video-count-badge" id="videoCount">0</span>
+        </div>
+        <div class="scan-actions">
+          <button class="scan-btn primary" id="scanFolderBtn">🔍 Scan Any Folder</button>
+          <button class="scan-btn secondary" id="scanFolderBtn2" title="Quick scan common locations">⚡ Quick
+            Load</button>
+        </div>
+        <div style="font-size:10px; color:#555; margin-bottom:6px;">
+          💡 Tip: Pick any folder (e.g. C:\Users) — all sub-videos found automatically!
+        </div>
+        <div class="scan-sort">
+          <label>Sort:</label>
+          <select id="sortSelect">
+            <option value="name">Name A→Z</option>
+            <option value="name-desc">Name Z→A</option>
+            <option value="size">Size ↑</option>
+            <option value="size-desc">Size ↓</option>
+            <option value="ext">Extension</option>
+          </select>
+        </div>
+      </div>
+      <input type="text" id="search" class="search-bar" placeholder="🔍 Search videos...">
+      <div id="playlist"></div>
+    </div>
+
+  </div>
+
+  <script src="https://vjs.zencdn.net/8.10.0/video.min.js"></script>
+  <script src="https://unpkg.com/videojs-vr/dist/videojs-vr.min.js"></script>
+  <script src="script.js"></script>
 </body>
+
 </html>
