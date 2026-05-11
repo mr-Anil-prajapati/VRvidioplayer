@@ -3,125 +3,195 @@
 
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>VR / Normal Video Player</title>
   <link href="https://vjs.zencdn.net/8.10.0/video-js.css" rel="stylesheet" />
   <link href="https://unpkg.com/videojs-vr/dist/videojs-vr.css" rel="stylesheet">
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" type="text/css" href="./style.css" />
 </head>
 
 <body>
-
-  <!-- ── Controls Bar (top) ── -->
-  <div class="controls-bar">
-
-    <!-- Playback -->
-    <button class="ctrl-btn" id="prevBtn">⏮</button>
-    <button class="ctrl-btn" id="skipBackBtn">⏪10s</button>
-    <button class="ctrl-btn" id="skipFwdBtn">10s⏩</button>
-    <button class="ctrl-btn" id="nextBtn">⏭</button>
-
-    <select id="speedSelect" class="size-input" title="Playback Speed"
-      style="width: auto; cursor: pointer; margin-left: 4px;">
-      <option value="0.25">0.25x</option>
-      <option value="0.5">0.5x</option>
-      <option value="0.75">0.75x</option>
-      <option value="1" selected>1x Normal</option>
-      <option value="1.25">1.25x</option>
-      <option value="1.5">1.5x</option>
-      <option value="2">2x</option>
-      <option value="3">3x</option>
-      <option value="4">4x</option>
-    </select>
-
-    <div class="divider"></div>
-
-    <button class="ctrl-btn" id="modeBtn">🔄 VR Mode</button>
-    <!-- hidden file pickers -->
-    <input type="file" id="folderPicker" webkitdirectory directory multiple accept="video/*,.mov,.mp4,.webm,.ogg,.m4v"
-      style="display:none;">
-    <input type="file" id="quickPicker" multiple accept="video/*,.mov,.mp4,.webm,.ogg,.m4v" style="display:none;">
-
-    <div class="divider"></div>
-
-    <!-- Cloud / API load -->
-    <div class="size-group" style="align-items: stretch; gap: 6px;">
-      <textarea id="apiUrlInput" class="size-input" placeholder="Video URL (one per line for multiple)"
-        style="flex:1; min-width: 220px; height: 60px; resize: vertical;"></textarea>
-      <div style="display: flex; flex-direction: column; gap: 4px;">
-        <button class="ctrl-btn" id="loadUrlBtn">☁️ Load</button>
-        <button class="ctrl-btn" id="loadAllBtn">📥 Load All</button>
-      </div>
-    </div>
-
-    <div class="divider"></div>
-
-    <!-- Auto detected resolution badge -->
-    <span id="resBadge">📐 No Video</span>
-
-    <!-- Manual override -->
-    <div class="size-group">
-      <label>W×H:</label>
-      <input class="size-input" type="number" id="inputW" placeholder="W" min="200" max="3840">
-      <span class="size-sep">×</span>
-      <input class="size-input" type="number" id="inputH" placeholder="H" min="100" max="2160">
-      <button class="ctrl-btn" id="applyResBtn">✅</button>
-      <button class="ctrl-btn" id="fitResBtn">🔲 Auto</button>
-    </div>
-
-    <div class="divider"></div>
-
-    <!-- Rotate -->
-    <button class="ctrl-btn" id="rotateBtn">🔃 Rotate 0°</button>
-
-    <div class="divider"></div>
-
-    <!-- Zoom -->
-    <div class="zoom-group">
-      <span id="zoomLabel">🔍 100%</span>
-      <button class="ctrl-btn zoom-btn" id="zoomOutBtn">➖</button>
-      <button class="ctrl-btn zoom-btn" id="zoomResetBtn">⟳</button>
-      <button class="ctrl-btn zoom-btn" id="zoomInBtn">➕</button>
-    </div>
-
-  </div>
-
-  <!-- ── Main Area ── -->
-  <div class="main-area">
-
-    <div class="player-section">
-      <div id="video-container"></div>
-    </div>
-
-    <div class="sidebar">
-      <!-- Scan Panel -->
-      <div class="scan-panel">
-        <div class="scan-panel-title">
-          📁 PC Video Finder
-          <span class="video-count-badge" id="videoCount">0</span>
-        </div>
-        <div class="scan-actions">
-          <button class="scan-btn primary" id="scanFolderBtn">🔍 Scan Any Folder</button>
-          <button class="scan-btn secondary" id="scanFolderBtn2" title="Quick scan common locations">⚡ Quick
-            Load</button>
-        </div>
-        <div style="font-size:10px; color:#555; margin-bottom:6px;">
-          💡 Tip: Pick any folder (e.g. C:\Users) — all sub-videos found automatically!
-        </div>
-        <div class="scan-sort">
-          <label>Sort:</label>
-          <select id="sortSelect">
-            <option value="name">Name A→Z</option>
-            <option value="name-desc">Name Z→A</option>
-            <option value="size">Size ↑</option>
-            <option value="size-desc">Size ↓</option>
-            <option value="ext">Extension</option>
-          </select>
+  <div class="page-shell">
+    <header class="topbar">
+      <div class="brand">
+        <span class="brand-mark">VR</span>
+        <div>
+          <div class="brand-title">VR VideoPlayer</div>
+          <div class="brand-subtitle">Immersive browser playback for local & cloud video.</div>
         </div>
       </div>
-      <input type="text" id="search" class="search-bar" placeholder="🔍 Search videos...">
-      <div id="playlist"></div>
-    </div>
+      <nav class="topnav">
+        <a href="#features">Features</a>
+        <a href="#player-section">Live Demo</a>
+        <a href="#playlist">Playlist</a>
+      </nav>
+      <a class="top-btn" href="#player-section">Launch App</a>
+    </header>
 
+    <section class="hero">
+      <div class="hero-copy">
+        <span class="eyebrow">Next-gen video studio</span>
+        <h1>Ultra-modern VR + traditional video playback<br>for professionals.</h1>
+        <p>Stream local folders, load remote sources, preview clips instantly, and switch between immersive 360° VR mode and standard playback with a polished, responsive interface.</p>
+        <div class="hero-actions">
+          <a class="primary-btn" href="#player-section">Open the player</a>
+          <a class="secondary-btn" href="#features">Explore features</a>
+        </div>
+      </div>
+      <div class="hero-visual">
+        <div class="hero-panel">
+          <div class="panel-label">Live Preview</div>
+          <div class="panel-metrics">
+            <span>4K Ready</span>
+            <span>360° VR</span>
+            <span>Cloud & Local</span>
+          </div>
+          <div class="panel-card">
+            <div class="panel-card-line"></div>
+            <div class="panel-card-line short"></div>
+            <div class="panel-card-line"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="features" id="features">
+      <div class="feature-card">
+        <div class="feature-heading">Immersive VR mode</div>
+        <p>Switch seamlessly between VR 360° playback and standard display for every video type.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-heading">Cloud + local sources</div>
+        <p>Load remote URLs or scan local folders and playlists with instant preview cards.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-heading">Precision controls</div>
+        <p>Adjust speed, zoom, rotation and resolution in a sleek interface built for power users.</p>
+      </div>
+    </section>
+
+    <section class="app-shell">
+      <div class="app-intro">
+        <div>
+          <p class="section-label">Demo</p>
+          <h2>Live application panel</h2>
+          <p>Use the full player experience below with playlist management, search and advanced playback controls.</p>
+        </div>
+      </div>
+
+      <!-- ── Controls Bar (top) ── -->
+      <div class="controls-bar">
+
+        <!-- Playback -->
+        <button class="ctrl-btn" id="prevBtn">⏮</button>
+        <button class="ctrl-btn" id="skipBackBtn">⏪10s</button>
+        <button class="ctrl-btn" id="skipFwdBtn">10s⏩</button>
+        <button class="ctrl-btn" id="nextBtn">⏭</button>
+
+        <select id="speedSelect" class="size-input" title="Playback Speed"
+          style="width: auto; cursor: pointer; margin-left: 4px;">
+          <option value="0.25">0.25x</option>
+          <option value="0.5">0.5x</option>
+          <option value="0.75">0.75x</option>
+          <option value="1" selected>1x Normal</option>
+          <option value="1.25">1.25x</option>
+          <option value="1.5">1.5x</option>
+          <option value="2">2x</option>
+          <option value="3">3x</option>
+          <option value="4">4x</option>
+        </select>
+
+        <div class="divider"></div>
+
+        <button class="ctrl-btn" id="modeBtn">🔄 VR Mode</button>
+        <!-- hidden file pickers -->
+        <input type="file" id="folderPicker" webkitdirectory directory multiple accept="video/*,.mov,.mp4,.webm,.ogg,.m4v"
+          style="display:none;">
+        <input type="file" id="quickPicker" multiple accept="video/*,.mov,.mp4,.webm,.ogg,.m4v" style="display:none;">
+
+        <div class="divider"></div>
+
+        <!-- Cloud / API load -->
+        <div class="size-group" style="align-items: stretch; gap: 6px;">
+          <textarea id="apiUrlInput" class="size-input" placeholder="Video URL (one per line for multiple)"
+            style="flex:1; min-width: 220px; height: 60px; resize: vertical;"></textarea>
+          <div style="display: flex; flex-direction: column; gap: 4px;">
+            <button class="ctrl-btn" id="loadUrlBtn">☁️ Load</button>
+            <button class="ctrl-btn" id="loadAllBtn">📥 Load All</button>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- Auto detected resolution badge -->
+        <span id="resBadge">📐 No Video</span>
+
+        <!-- Manual override -->
+        <div class="size-group">
+          <label>W×H:</label>
+          <input class="size-input" type="number" id="inputW" placeholder="W" min="200" max="3840">
+          <span class="size-sep">×</span>
+          <input class="size-input" type="number" id="inputH" placeholder="H" min="100" max="2160">
+          <button class="ctrl-btn" id="applyResBtn">✅</button>
+          <button class="ctrl-btn" id="fitResBtn">🔲 Auto</button>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- Rotate -->
+        <button class="ctrl-btn" id="rotateBtn">🔃 Rotate 0°</button>
+
+        <div class="divider"></div>
+
+        <!-- Zoom -->
+        <div class="zoom-group">
+          <span id="zoomLabel">🔍 100%</span>
+          <button class="ctrl-btn zoom-btn" id="zoomOutBtn">➖</button>
+          <button class="ctrl-btn zoom-btn" id="zoomResetBtn">⟳</button>
+          <button class="ctrl-btn zoom-btn" id="zoomInBtn">➕</button>
+        </div>
+
+      </div>
+
+      <!-- ── Main Area ── -->
+      <div class="main-area">
+
+        <div class="player-section" id="player-section">
+          <div id="video-container"></div>
+        </div>
+
+        <div class="sidebar">
+          <!-- Scan Panel -->
+          <div class="scan-panel">
+            <div class="scan-panel-title">
+              📁 PC Video Finder
+              <span class="video-count-badge" id="videoCount">0</span>
+            </div>
+            <div class="scan-actions">
+              <button class="scan-btn primary" id="scanFolderBtn">🔍 Scan Any Folder</button>
+              <button class="scan-btn secondary" id="scanFolderBtn2" title="Quick scan common locations">⚡ Quick
+                Load</button>
+            </div>
+            <div style="font-size:10px; color:#555; margin-bottom:6px;">
+              💡 Tip: Pick any folder (e.g. C:\Users) — all sub-videos found automatically!
+            </div>
+            <div class="scan-sort">
+              <label>Sort:</label>
+              <select id="sortSelect">
+                <option value="name">Name A→Z</option>
+                <option value="name-desc">Name Z→A</option>
+                <option value="size">Size ↑</option>
+                <option value="size-desc">Size ↓</option>
+                <option value="ext">Extension</option>
+              </select>
+            </div>
+          </div>
+          <input type="text" id="search" class="search-bar" placeholder="🔍 Search videos...">
+          <div id="playlist"></div>
+        </div>
+
+      </div>
+    </section>
   </div>
 
   <script src="https://vjs.zencdn.net/8.10.0/video.min.js"></script>
