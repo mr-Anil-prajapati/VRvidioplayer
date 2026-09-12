@@ -149,8 +149,12 @@ function initPlayer(url, time = 0) {
   }
 
   player.on('ended', () => {
-    currentIndex = (currentIndex + 1) % files.length;
-    playVideo(currentIndex);
+    if (files.length > 0 && files[currentIndex]) {
+      playVideo(currentIndex);
+    } else {
+      player.currentTime(0);
+      player.play().catch(() => {});
+    }
   });
 
   player.on('error', () => {
