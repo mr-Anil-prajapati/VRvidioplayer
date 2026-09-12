@@ -426,7 +426,11 @@ function initPlayer(url, time = 0) {
   });
 
   if (isVR) {
-    player.vr({ projection: "360", motionControls: true });
+    try {
+      player.vr({ projection: "360", motionControls: true });
+    } catch (error) {
+      console.warn('VR plugin not available:', error);
+    }
     modeBtn.textContent = "🔄 Normal Mode";
   } else {
     modeBtn.textContent = "🔄 VR 360° Mode";
@@ -649,13 +653,19 @@ async function loadVideoFromUrl(rawUrl) {
   }
 }
 
-document.getElementById("loadUrlBtn").addEventListener("click", () => {
-  loadVideoFromUrl(document.getElementById("apiUrlInput").value);
-});
+var loadUrlBtnEl = document.getElementById("loadUrlBtn");
+if (loadUrlBtnEl) {
+  loadUrlBtnEl.addEventListener("click", () => {
+    loadVideoFromUrl(document.getElementById("apiUrlInput").value);
+  });
+}
 
-document.getElementById("apiUrlInput").addEventListener("keydown", (e) => {
-  if (e.key === "Enter") loadVideoFromUrl(e.target.value);
-});
+var apiUrlInputEl = document.getElementById("apiUrlInput");
+if (apiUrlInputEl) {
+  apiUrlInputEl.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") loadVideoFromUrl(e.target.value);
+  });
+}
 
 function buildPlaylist() {
   playlistEl.innerHTML = "";
