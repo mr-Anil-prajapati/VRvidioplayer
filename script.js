@@ -5,7 +5,7 @@ let currentIndex = 0;
 let currentUrl = null;
 let currentObjectUrl = null;
 let autoMode = true;
-let loopMode = 'one'; // 'one' | 'all' | 'off'
+let loop1Only = true;
 let zoomLevel = 1.0;
 const ZOOM_STEP = 0.1;
 const ZOOM_MIN = 0.3;
@@ -150,24 +150,17 @@ function initPlayer(url, time = 0) {
   }
 
   player.on('ended', () => {
-    if (loopMode === 'one') {
+    if (loop1Only) {
       if (files.length > 0 && files[currentIndex]) {
         playVideo(currentIndex);
       } else {
         player.currentTime(0);
         player.play().catch(() => {});
       }
-    } else if (loopMode === 'all') {
+    } else {
       if (files.length > 0) {
         currentIndex = (currentIndex + 1) % files.length;
         playVideo(currentIndex);
-      }
-    } else if (loopMode === 'off') {
-      if (files.length > 0 && currentIndex < files.length - 1) {
-        currentIndex++;
-        playVideo(currentIndex);
-      } else {
-        if (player) player.pause();
       }
     }
   });
@@ -236,25 +229,11 @@ function togglePlayPause() {
 }
 
 function toggleLoop() {
-  if (loopMode === 'one') {
-    loopMode = 'all';
-  } else if (loopMode === 'all') {
-    loopMode = 'off';
-  } else {
-    loopMode = 'one';
-  }
+  loop1Only = !loop1Only;
   const loopBtn = document.getElementById('loopBtn');
   if (loopBtn) {
-    if (loopMode === 'one') {
-      loopBtn.textContent = '🔁 Loop: 1 Video';
-      loopBtn.style.background = '#16a34a';
-    } else if (loopMode === 'all') {
-      loopBtn.textContent = '🔁 Loop: All';
-      loopBtn.style.background = '#2563eb';
-    } else {
-      loopBtn.textContent = '🛑 Loop: OFF';
-      loopBtn.style.background = '#475569';
-    }
+    loopBtn.textContent = loop1Only ? '🔁 Loop: 1 Video' : '🔁 Loop: 1 Video (OFF)';
+    loopBtn.style.background = loop1Only ? '#16a34a' : '#475569';
   }
 }
 
