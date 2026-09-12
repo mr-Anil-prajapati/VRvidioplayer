@@ -514,74 +514,77 @@ if (loopBtnEl) {
   loopBtnEl.addEventListener('click', toggleLoop);
 }
 
-document.getElementById('prevBtn').addEventListener('click', () => {
+document.getElementById('prevBtn')?.addEventListener('click', () => {
   if (!files.length) return;
   currentIndex = (currentIndex - 1 + files.length) % files.length;
   playVideo(currentIndex);
 });
-document.getElementById('nextBtn').addEventListener('click', () => {
+document.getElementById('nextBtn')?.addEventListener('click', () => {
   if (!files.length) return;
   currentIndex = (currentIndex + 1) % files.length;
   playVideo(currentIndex);
 });
-document.getElementById('skipBackBtn').addEventListener('click', () => {
+document.getElementById('skipBackBtn')?.addEventListener('click', () => {
   if (player) player.currentTime(Math.max(0, player.currentTime() - 10));
 });
-document.getElementById('skipFwdBtn').addEventListener('click', () => {
+document.getElementById('skipFwdBtn')?.addEventListener('click', () => {
   if (player) player.currentTime(Math.min(player.duration() || 0, player.currentTime() + 10));
 });
-document.getElementById('speedSelect').addEventListener('change', (e) => {
+document.getElementById('speedSelect')?.addEventListener('change', (e) => {
   if (player) {
     const newSpeed = parseFloat(e.target.value) || 1;
     player.playbackRate(newSpeed);
   }
 });
-modeBtn.addEventListener('click', () => {
+modeBtn?.addEventListener('click', () => {
   isVR = !isVR;
   const t = player ? player.currentTime() : 0;
   initPlayer(currentUrl, t);
 });
 
-document.getElementById('applyResBtn').addEventListener('click', applyCustomSize);
-document.getElementById('fitResBtn').addEventListener('click', resetToAuto);
-inputW.addEventListener('keydown', (e) => { if (e.key === 'Enter') applyCustomSize(); });
-inputH.addEventListener('keydown', (e) => { if (e.key === 'Enter') applyCustomSize(); });
+document.getElementById('applyResBtn')?.addEventListener('click', applyCustomSize);
+document.getElementById('fitResBtn')?.addEventListener('click', resetToAuto);
+inputW?.addEventListener('keydown', (e) => { if (e.key === 'Enter') applyCustomSize(); });
+inputH?.addEventListener('keydown', (e) => { if (e.key === 'Enter') applyCustomSize(); });
 
-document.getElementById('scanFolderBtn').addEventListener('click', () => folderPicker.click());
-document.getElementById('scanFolderBtn2').addEventListener('click', () => document.getElementById('quickPicker').click());
+document.getElementById('scanFolderBtn')?.addEventListener('click', () => folderPicker.click());
+document.getElementById('scanFolderBtn2')?.addEventListener('click', () => document.getElementById('quickPicker')?.click());
 
-document.getElementById('quickPicker').addEventListener('change', (e) => {
+document.getElementById('quickPicker')?.addEventListener('change', (e) => {
   const picked = Array.from(e.target.files).filter(isVideoFile);
   if (!picked.length) return alert('No video files selected!');
   loadFiles(picked);
 });
 
-folderPicker.addEventListener('change', (e) => {
+folderPicker?.addEventListener('change', (e) => {
   const picked = Array.from(e.target.files).filter(isVideoFile);
   if (!picked.length) return alert('No video files found in that folder!');
   loadFiles(picked);
 });
 
-document.getElementById('sortSelect').addEventListener('change', () => {
+document.getElementById('sortSelect')?.addEventListener('change', () => {
   if (files.length) buildPlaylist();
 });
 
-document.getElementById('loadUrlBtn').addEventListener('click', () => {
-  const urls = document.getElementById('apiUrlInput').value.split('\n').filter(u => u.trim());
+document.getElementById('loadUrlBtn')?.addEventListener('click', () => {
+  const input = document.getElementById('apiUrlInput');
+  if (!input) return;
+  const urls = input.value.split('\n').filter(u => u.trim());
   if (urls.length === 1 && isDirectoryListingUrl(urls[0])) {
     loadAllVideosFromUrls(urls[0]);
   } else if (urls.length === 1) {
     loadVideoFromUrl(urls[0]);
   } else {
-    loadAllVideosFromUrls(document.getElementById('apiUrlInput').value);
+    loadAllVideosFromUrls(input.value);
   }
 });
 
-document.getElementById('loadAllBtn').addEventListener('click', () => {
-  loadAllVideosFromUrls(document.getElementById('apiUrlInput').value);
+document.getElementById('loadAllBtn')?.addEventListener('click', () => {
+  const input = document.getElementById('apiUrlInput');
+  if (input) loadAllVideosFromUrls(input.value);
 });
 
-document.getElementById('apiUrlInput').addEventListener('keydown', (e) => {
+document.getElementById('apiUrlInput')?.addEventListener('keydown', (e) => {
   if (e.key === 'Enter' && !e.shiftKey) {
     e.preventDefault();
     const urls = e.target.value.split('\n').filter(u => u.trim());
@@ -595,7 +598,7 @@ document.getElementById('apiUrlInput').addEventListener('keydown', (e) => {
   }
 });
 
-document.getElementById('search').addEventListener('input', handleSearch);
+document.getElementById('search')?.addEventListener('input', handleSearch);
 window.addEventListener('resize', () => {
   if (autoMode) autoDetectAndResize();
 });
