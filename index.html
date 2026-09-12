@@ -818,11 +818,13 @@ document.getElementById("loadServerBtn").addEventListener("click", buildServerLi
 
 function toggleLoop() {
   loop1Only = !loop1Only;
-  const loopBtn = document.getElementById("loopBtn");
+  var loopBtn = document.getElementById("loopBtn");
   if (loopBtn) {
-    loopBtn.textContent = loop1Only ? "🔁 Loop: 1 Video" : "🔁 Loop: 1 Video (OFF)";
+    loopBtn.textContent = loop1Only ? "🔁 Loop: 1 Video" : "🔁 Loop: OFF";
+    loopBtn.style.backgroundColor = loop1Only ? "#16a34a" : "#475569";
     loopBtn.style.background = loop1Only ? "#16a34a" : "#475569";
   }
+  alert("toggleLoop called! loop1Only=" + loop1Only);
 }
 
 const loopBtnEl = document.getElementById("loopBtn");

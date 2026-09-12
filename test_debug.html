@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head><title>Debug Test</title></head>
+<body>
+<button id="loopBtn" onclick="toggleLoop()" style="background: #16a34a; color: #fff; padding: 10px 20px; font-size: 16px; border: none; cursor: pointer;">🔁 Loop: 1 Video</button>
+<div id="result" style="margin-top: 20px; font-size: 20px; color: #333;"></div>
+
+<script>
+let loop1Only = true;
+
+function toggleLoop() {
+  loop1Only = !loop1Only;
+  const loopBtn = document.getElementById("loopBtn");
+  const result = document.getElementById("result");
+  if (loopBtn) {
+    loopBtn.textContent = loop1Only ? "🔁 Loop: 1 Video" : "🔁 Loop: 1 Video (OFF)";
+    loopBtn.style.background = loop1Only ? "#16a34a" : "#475569";
+  }
+  if (result) {
+    result.textContent = "toggleLoop called! loop1Only = " + loop1Only;
+  }
+}
+</script>
+</body>
+</html>
