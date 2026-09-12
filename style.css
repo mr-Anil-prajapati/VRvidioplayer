@@ -345,6 +345,10 @@ body {
   background: #0f766e;
 }
 
+#loopBtn {
+  background: #16a34a;
+}
+
 #loadBtn,
 #loadUrlBtn,
 #loadAllBtn,

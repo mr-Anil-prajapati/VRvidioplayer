@@ -5,6 +5,7 @@ let currentIndex = 0;
 let currentUrl = null;
 let currentObjectUrl = null;
 let autoMode = true;
+let isLooping = true;
 let zoomLevel = 1.0;
 const ZOOM_STEP = 0.1;
 const ZOOM_MIN = 0.3;
@@ -149,11 +150,18 @@ function initPlayer(url, time = 0) {
   }
 
   player.on('ended', () => {
-    if (files.length > 0 && files[currentIndex]) {
-      playVideo(currentIndex);
+    if (isLooping) {
+      if (files.length > 0 && files[currentIndex]) {
+        playVideo(currentIndex);
+      } else {
+        player.currentTime(0);
+        player.play().catch(() => {});
+      }
     } else {
-      player.currentTime(0);
-      player.play().catch(() => {});
+      if (files.length > 0) {
+        currentIndex = (currentIndex + 1) % files.length;
+        playVideo(currentIndex);
+      }
     }
   });
 
@@ -217,6 +225,15 @@ function togglePlayPause() {
     player.play().catch(() => {});
   } else {
     player.pause();
+  }
+}
+
+function toggleLoop() {
+  isLooping = !isLooping;
+  const loopBtn = document.getElementById('loopBtn');
+  if (loopBtn) {
+    loopBtn.textContent = isLooping ? '🔁 Loop: ON' : '🔁 Loop: OFF';
+    loopBtn.style.background = isLooping ? '#16a34a' : '#475569';
   }
 }
 
@@ -488,7 +505,13 @@ function handleKeyboardShortcuts(event) {
     case 'ArrowDown': if (player) player.volume(Math.max(0, player.volume() - 0.1)); break;
     case 'm': if (player) player.muted(!player.muted()); break;
     case 'f': if (player) player.requestFullscreen?.(); break;
+    case 'l': toggleLoop(); break;
   }
+}
+
+const loopBtnEl = document.getElementById('loopBtn');
+if (loopBtnEl) {
+  loopBtnEl.addEventListener('click', toggleLoop);
 }
 
 document.getElementById('prevBtn').addEventListener('click', () => {

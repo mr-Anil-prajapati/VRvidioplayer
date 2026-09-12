@@ -215,7 +215,7 @@
 
     <div class="divider"></div>
 
-    
+    <button class="ctrl-btn" id="loopBtn" title="Toggle Loop Mode" style="background: #16a34a;">🔁 Loop: ON</button>
 
     <div class="divider"></div>
 
@@ -304,6 +304,7 @@ let files        = [];
 let currentIndex = 0;
 let currentUrl   = null;
 let autoMode     = true; // true = auto detect video resolution
+let isLooping    = true; // true = loop current video on completion
 
 let zoomLevel    = 1.0;
 const ZOOM_STEP  = 0.1;
@@ -450,11 +451,18 @@ function initPlayer(url, time = 0) {
   }
 
   player.on("ended", () => {
-    if (files.length > 0 && files[currentIndex]) {
-      playVideo(currentIndex);
+    if (isLooping) {
+      if (files.length > 0 && files[currentIndex]) {
+        playVideo(currentIndex);
+      } else {
+        player.currentTime(0);
+        player.play().catch(() => {});
+      }
     } else {
-      player.currentTime(0);
-      player.play().catch(() => {});
+      if (files.length > 0) {
+        currentIndex = (currentIndex + 1) % files.length;
+        playVideo(currentIndex);
+      }
     }
   });
 }
@@ -797,6 +805,20 @@ document.getElementById("loadServerBtn").addEventListener("click", buildServerLi
   });
 });
 
+
+function toggleLoop() {
+  isLooping = !isLooping;
+  const loopBtn = document.getElementById("loopBtn");
+  if (loopBtn) {
+    loopBtn.textContent = isLooping ? "🔁 Loop: ON" : "🔁 Loop: OFF";
+    loopBtn.style.background = isLooping ? "#16a34a" : "#475569";
+  }
+}
+
+const loopBtnEl = document.getElementById("loopBtn");
+if (loopBtnEl) {
+  loopBtnEl.addEventListener("click", toggleLoop);
+}
 
 </script>
 </body>
