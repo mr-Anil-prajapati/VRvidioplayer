@@ -21,7 +21,7 @@ const resBadge = document.getElementById('resBadge');
 const inputW = document.getElementById('inputW');
 const inputH = document.getElementById('inputH');
 
-const videoExtensions = ['mp4', 'mov', 'webm', 'ogg', 'm4v', 'mkv', 'avi', 'flv', 'wmv', 'ts', '3gp'];
+const videoExtensions = ['mp4', 'mov', 'webm', 'ogg', 'm4v', 'mkv', 'avi', 'flv', 'wmv', 'ts', '3gp', 'xyz'];
 
 function revokeCurrentObjectUrl() {
   if (currentObjectUrl) {
@@ -38,6 +38,7 @@ function getVideoMime(url, file) {
     if (name.endsWith('.webm')) return 'video/webm';
     if (name.endsWith('.ogg')) return 'video/ogg';
     if (name.endsWith('.m4v')) return 'video/mp4';
+    if (name.endsWith('.xyz')) return 'video/mp4';
     if (file.type && file.type !== 'video/quicktime') return file.type;
     if (file.type === 'video/quicktime') return 'video/mp4';
   }
@@ -50,6 +51,7 @@ function getVideoMime(url, file) {
       case 'ogg': return 'video/ogg';
       case 'mov': return 'video/mp4';
       case 'm4v': return 'video/mp4';
+      case 'xyz': return 'video/mp4';
       default: return 'video/mp4';
     }
   } catch (e) {
