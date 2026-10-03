@@ -2,9 +2,11 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>VR / Normal Video Player</title>
 <link href="https://vjs.zencdn.net/8.10.0/video-js.css" rel="stylesheet" />
 <link href="https://unpkg.com/videojs-vr/dist/videojs-vr.css" rel="stylesheet">
+<link href="local-video.css" rel="stylesheet">
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: Arial; background: #111; color: #fff; height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
@@ -182,6 +184,673 @@
   .server-status {
     font-size: 11px; color: #666; text-align: center; padding: 16px 8px;
   }
+
+  /* ── Mobile & Responsive Player Overlay Styles ── */
+  .player-wrapper {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    background: #000;
+    touch-action: manipulation;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  /* Transparent gesture capture layer behind controls */
+  .gesture-area {
+    position: absolute;
+    inset: 0;
+    z-index: 5;
+    background: transparent;
+    touch-action: none;
+  }
+
+  /* Double-tap ripple indicators */
+  .gesture-ripple {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%) scale(0.7);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.7);
+    color: #fff;
+    border-radius: 50%;
+    width: 80px;
+    height: 80px;
+    z-index: 15;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.25s ease, transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+  }
+  .gesture-ripple.active {
+    opacity: 1;
+    transform: translateY(-50%) scale(1);
+  }
+  .ripple-left { left: 12%; }
+  .ripple-right { right: 12%; }
+  .ripple-center { left: 50%; transform: translate(-50%, -50%) scale(0.7); width: 70px; height: 70px; }
+  .ripple-center.active { transform: translate(-50%, -50%) scale(1); }
+  .ripple-icon { font-size: 24px; line-height: 1; }
+  .ripple-text { font-size: 11px; font-weight: bold; margin-top: 3px; color: #ff4444; }
+
+  /* OSD Brightness / Volume */
+  .osd-bar {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 44px;
+    height: 140px;
+    background: rgba(18, 18, 20, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 22px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 4px;
+    z-index: 25;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  .osd-bar.active { opacity: 1; }
+  .osd-left { left: 18px; }
+  .osd-right { right: 18px; }
+  .osd-icon { font-size: 16px; color: #fff; }
+  .osd-track {
+    width: 6px;
+    flex: 1;
+    margin: 8px 0;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 3px;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+  }
+  .osd-fill {
+    width: 100%;
+    background: #0088ff;
+    border-radius: 3px;
+    transition: height 0.05s ease;
+    height: 50%;
+  }
+  .osd-left .osd-fill { background: #ffaa00; }
+  .osd-text { font-size: 10px; font-weight: bold; color: #ddd; }
+
+  /* Mobile Controls Overlay */
+  .mobile-controls-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    background: linear-gradient(180deg, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.15) 25%, rgba(0,0,0,0.15) 75%, rgba(0,0,0,0.85) 100%);
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity 0.28s ease, visibility 0.28s ease;
+    z-index: 10;
+  }
+  .mobile-controls-overlay.active {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+  }
+
+  /* Overlay Top Bar */
+  .m-top-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    gap: 8px;
+    pointer-events: auto;
+  }
+  .m-video-title-wrap {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    padding: 0 4px;
+  }
+  .m-video-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: #fff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .m-res-badge {
+    font-size: 10px;
+    color: #0af;
+    opacity: 0.9;
+  }
+
+  /* Center Controls */
+  .m-center-controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    pointer-events: auto;
+  }
+  .m-btn {
+    border: none;
+    background: transparent;
+    color: #fff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    transition: transform 0.15s ease, background-color 0.15s ease;
+  }
+  .m-btn:active { transform: scale(0.92); }
+  .m-btn-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.45);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+  }
+  .m-btn-center {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+  }
+  .m-btn-play-pause {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: rgba(204, 0, 0, 0.9);
+    box-shadow: 0 4px 14px rgba(204, 0, 0, 0.4);
+  }
+  .m-btn-play-pause:hover { filter: brightness(1.2); }
+  .m-btn-sm {
+    width: 44px;
+    height: 44px;
+    border-radius: 8px;
+    background: transparent;
+  }
+  .m-btn-chip {
+    padding: 6px 10px;
+    min-width: 44px;
+    height: 34px;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.15);
+    font-size: 12px;
+    font-weight: bold;
+    color: #fff;
+  }
+
+  /* Bottom Bar */
+  .m-bottom-bar {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 6px 14px 12px 14px;
+    pointer-events: auto;
+  }
+  .m-progress-container {
+    width: 100%;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    position: relative;
+    cursor: pointer;
+    touch-action: none;
+  }
+  .m-progress-track {
+    width: 100%;
+    height: 5px;
+    background: rgba(255, 255, 255, 0.25);
+    border-radius: 3px;
+    position: relative;
+    transition: height 0.15s ease;
+  }
+  .m-progress-container:hover .m-progress-track,
+  .m-progress-container.scrubbing .m-progress-track {
+    height: 8px;
+  }
+  .m-progress-buffer {
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.45);
+    border-radius: 3px;
+    width: 0%;
+  }
+  .m-progress-played {
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    background: #cc0000;
+    border-radius: 3px;
+    width: 0%;
+  }
+  .m-progress-thumb {
+    position: absolute;
+    top: 50%;
+    left: 0%;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: #cc0000;
+    transform: translate(-50%, -50%);
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.6);
+    transition: transform 0.15s ease;
+  }
+  .m-progress-container:hover .m-progress-thumb,
+  .m-progress-container.scrubbing .m-progress-thumb {
+    transform: translate(-50%, -50%) scale(1.3);
+  }
+  .m-seek-tooltip {
+    position: absolute;
+    top: -28px;
+    left: 0%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.85);
+    color: #fff;
+    padding: 3px 6px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: bold;
+    display: none;
+    pointer-events: none;
+    white-space: nowrap;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+  }
+
+  /* Bottom Row */
+  .m-bottom-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .m-time-display {
+    font-size: 12px;
+    font-weight: 500;
+    color: #ddd;
+    font-variant-numeric: tabular-nums;
+  }
+  .m-time-sep { margin: 0 3px; color: #777; }
+  .m-bottom-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  /* Drawer Backdrop */
+  .drawer-backdrop, .settings-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.65);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    z-index: 998;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.25s ease, visibility 0.25s ease;
+  }
+  .drawer-backdrop.active, .settings-backdrop.active {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  /* Mobile Drawer Header & Actions (hidden on desktop) */
+  .mobile-drawer-header {
+    display: none;
+  }
+  .mobile-local-actions {
+    display: none;
+  }
+
+  /* Settings Modal / Bottom Sheet */
+  .settings-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 2000;
+    pointer-events: none;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+  }
+  .settings-modal.open {
+    pointer-events: auto;
+  }
+  .settings-sheet {
+    position: relative;
+    width: 100%;
+    max-width: 520px;
+    max-height: 85vh;
+    background: #18181b;
+    border-radius: 20px 20px 0 0;
+    border: 1px solid #333;
+    border-bottom: none;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    transform: translateY(100%);
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    z-index: 2001;
+    box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.8);
+  }
+  .settings-modal.open .settings-sheet {
+    transform: translateY(0);
+  }
+  .settings-handle {
+    width: 36px;
+    height: 4px;
+    background: #444;
+    border-radius: 2px;
+    margin: 8px auto 0 auto;
+  }
+  .settings-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 18px;
+    border-bottom: 1px solid #2a2a2a;
+  }
+  .settings-title {
+    font-size: 15px;
+    font-weight: bold;
+    color: #fff;
+  }
+  .settings-close-btn {
+    background: #2a2a2a;
+    border: none;
+    color: #ccc;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .settings-body {
+    overflow-y: auto;
+    padding: 14px 18px 24px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .setting-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .setting-row {
+    display: flex;
+    gap: 10px;
+  }
+  .setting-col {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .setting-label {
+    font-size: 12px;
+    color: #aaa;
+    font-weight: 600;
+  }
+  .setting-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .setting-chip {
+    padding: 6px 12px;
+    background: #242428;
+    border: 1px solid #333;
+    color: #ddd;
+    border-radius: 6px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: 0.15s;
+    font-weight: 500;
+  }
+  .setting-chip:hover {
+    background: #333;
+    color: #fff;
+  }
+  .setting-chip.active {
+    background: #cc0000;
+    color: #fff;
+    border-color: #ff3333;
+  }
+  .setting-toggle-btn {
+    width: 100%;
+    padding: 9px 12px;
+    background: #242428;
+    border: 1px solid #3a3a40;
+    color: #fff;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .setting-btn-group {
+    display: flex;
+    gap: 4px;
+  }
+  .setting-mini-btn {
+    flex: 1;
+    padding: 7px;
+    background: #1a5c30;
+    border: none;
+    border-radius: 5px;
+    color: #fff;
+    font-size: 12px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  .setting-action-btn {
+    width: 100%;
+    padding: 10px;
+    background: #0055bb;
+    border: none;
+    border-radius: 6px;
+    color: #fff;
+    font-size: 13px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  .setting-info {
+    padding: 8px 12px;
+    background: #121214;
+    border: 1px solid #2a2a2a;
+    border-radius: 6px;
+    font-size: 11px;
+    color: #888;
+  }
+
+  /* ── Responsive Mobile Rules (Phones & Tablets <= 768px) ── */
+  @media (max-width: 768px) {
+    /* Hide desktop toolbar */
+    .controls-bar {
+      display: none !important;
+    }
+
+    /* Main Area fills entire screen */
+    .main-area {
+      flex: 1;
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      height: 100dvh;
+      overflow: hidden;
+    }
+
+    /* Video section uses 100% of available screen */
+    .player-section {
+      width: 100vw !important;
+      height: 100% !important;
+      padding: 0 !important;
+      position: relative;
+    }
+
+    #video-container {
+      width: 100% !important;
+      height: 100% !important;
+      max-width: 100vw !important;
+      max-height: 100vh !important;
+      border-radius: 0 !important;
+    }
+
+    /* Hide Video.js default controls on mobile so custom controls take over */
+    .video-js .vjs-control-bar {
+      display: none !important;
+    }
+    .video-js .vjs-big-play-button {
+      display: none !important;
+    }
+
+    /* Sidebar converts into a smooth slide-in Drawer */
+    .sidebar {
+      position: fixed;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      width: 86%;
+      max-width: 360px;
+      z-index: 1000;
+      background: #18181b;
+      box-shadow: -6px 0 25px rgba(0, 0, 0, 0.8);
+      transform: translateX(100%);
+      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .sidebar.open {
+      transform: translateX(0);
+    }
+
+    .mobile-drawer-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 14px;
+      background: #121214;
+      border-bottom: 1px solid #2a2a2a;
+    }
+    .mobile-drawer-title {
+      font-size: 14px;
+      font-weight: bold;
+      color: #fff;
+    }
+    .drawer-close-btn {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: #27272a;
+      border: none;
+      color: #fff;
+      font-size: 14px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .mobile-local-actions {
+      display: block;
+      padding: 8px 10px;
+      background: #141416;
+      border-bottom: 1px solid #282828;
+    }
+    .mobile-load-btn {
+      width: 100%;
+      padding: 9px 12px;
+      background: #cc0000;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    /* Touch targets for video items in playlist */
+    .video-item {
+      min-height: 52px;
+      padding: 10px;
+      margin-bottom: 8px;
+    }
+    .video-item span {
+      font-size: 13px;
+      margin-top: 6px;
+    }
+
+    .server-item {
+      min-height: 48px;
+      padding: 10px 12px;
+    }
+  }
+
+  /* ── Phone Landscape Mode (< 900px wide & landscape) ── */
+  @media (max-width: 900px) and (orientation: landscape) {
+    .controls-bar {
+      display: none !important;
+    }
+    .main-area {
+      width: 100vw;
+      height: 100vh;
+      height: 100dvh;
+    }
+    .player-section {
+      width: 100vw !important;
+      height: 100vh !important;
+      padding: 0 !important;
+    }
+    #video-container {
+      width: 100% !important;
+      height: 100% !important;
+    }
+    .m-top-bar {
+      padding: 6px 14px;
+    }
+    .m-center-controls {
+      gap: 12px;
+    }
+    .m-btn-center {
+      width: 44px;
+      height: 44px;
+    }
+    .m-btn-play-pause {
+      width: 52px;
+      height: 52px;
+    }
+    .m-bottom-bar {
+      padding: 4px 14px 8px 14px;
+    }
+  }
 </style>
 </head>
 <body>
@@ -253,10 +922,111 @@
   <div class="main-area">
 
     <div class="player-section">
-      <div id="video-container"></div>
+      <div class="player-wrapper" id="playerWrapper">
+        <div id="video-container"></div>
+
+        <!-- Gesture Tap / Swipe Area -->
+        <div id="mobileGestureArea" class="gesture-area"></div>
+
+        <!-- Double Tap Ripples -->
+        <div id="rippleLeft" class="gesture-ripple ripple-left"><span class="ripple-icon">⏪</span><span class="ripple-text">10s</span></div>
+        <div id="rippleRight" class="gesture-ripple ripple-right"><span class="ripple-icon">⏩</span><span class="ripple-text">10s</span></div>
+        <div id="rippleCenter" class="gesture-ripple ripple-center"><span class="ripple-icon" id="rippleCenterIcon">▶</span></div>
+
+        <!-- OSD Bars for Brightness & Volume -->
+        <div id="osdBrightness" class="osd-bar osd-left">
+          <span class="osd-icon">☀️</span>
+          <div class="osd-track"><div class="osd-fill" id="osdBrightnessFill"></div></div>
+          <span class="osd-text" id="osdBrightnessText">100%</span>
+        </div>
+        <div id="osdVolume" class="osd-bar osd-right">
+          <span class="osd-icon" id="osdVolumeIcon">🔊</span>
+          <div class="osd-track"><div class="osd-fill" id="osdVolumeFill"></div></div>
+          <span class="osd-text" id="osdVolumeText">100%</span>
+        </div>
+
+        <!-- Mobile Controls Overlay -->
+        <div id="mobileVideoControls" class="mobile-controls-overlay">
+          <!-- Top Bar -->
+          <div class="m-top-bar">
+            <button class="m-btn m-btn-icon" id="mobileDrawerBtn" title="Files & Playlist" aria-label="Open Files">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg>
+            </button>
+            <div class="m-video-title-wrap">
+              <span id="mobileVideoTitle" class="m-video-title">No Video Selected</span>
+              <span id="mobileResBadge" class="m-res-badge">📐 No Video</span>
+            </div>
+            <button class="m-btn m-btn-icon" id="mobileSettingsBtn" title="Settings" aria-label="Video Settings">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.488.488 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54A.484.484 0 0 0 14 2h-4c-.25 0-.46.18-.49.42l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.63 8.47c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.49.41h4c.25 0 .46-.18.49-.42l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+            </button>
+          </div>
+
+          <!-- Center Controls -->
+          <div class="m-center-controls">
+            <button class="m-btn m-btn-center" id="mobilePrevBtn" title="Previous Video" aria-label="Previous">
+              <svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>
+            </button>
+            <button class="m-btn m-btn-center" id="mobileRewindBtn" title="Rewind 10s" aria-label="Rewind 10 seconds">
+              <svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor"><path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8zm-1.1 11h-.85v-3.26l-1.01.35v-.69l1.76-.63h.1v4.23zm3.17-2.32c0-.52.09-.92.26-1.21.18-.29.43-.43.76-.43.33 0 .58.14.76.43.18.29.27.69.27 1.21v.44c0 .52-.09.93-.27 1.22-.18.29-.43.43-.76.43-.33 0-.58-.14-.76-.43-.17-.29-.26-.7-.26-1.22v-.44zm.84.49c0 .35.04.61.11.78.07.17.19.26.35.26.16 0 .28-.09.35-.26.07-.17.11-.43.11-.78v-.54c0-.35-.04-.61-.11-.78-.07-.17-.19-.26-.35-.26-.16 0-.28.09-.35.26-.07.17-.11.43-.11.78v.54z"/></svg>
+            </button>
+            <button class="m-btn m-btn-play-pause" id="mobilePlayPauseBtn" title="Play / Pause" aria-label="Play or Pause">
+              <svg id="mPlayIcon" viewBox="0 0 24 24" width="34" height="34" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+              <svg id="mPauseIcon" viewBox="0 0 24 24" width="34" height="34" fill="currentColor" style="display:none;"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+            </button>
+            <button class="m-btn m-btn-center" id="mobileForwardBtn" title="Forward 10s" aria-label="Forward 10 seconds">
+              <svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor"><path d="M12 5V1l5 5-5 5V7c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6h2c0 4.42-3.58 8-8 8s-8-3.58-8-8 3.58-8 8-8zm-1.1 11h-.85v-3.26l-1.01.35v-.69l1.76-.63h.1v4.23zm3.17-2.32c0-.52.09-.92.26-1.21.18-.29.43-.43.76-.43.33 0 .58.14.76.43.18.29.27.69.27 1.21v.44c0 .52-.09.93-.27 1.22-.18.29-.43.43-.76.43-.33 0-.58-.14-.76-.43-.17-.29-.26-.7-.26-1.22v-.44zm.84.49c0 .35.04.61.11.78.07.17.19.26.35.26.16 0 .28-.09.35-.26.07-.17.11-.43.11-.78v-.54c0-.35-.04-.61-.11-.78-.07-.17-.19-.26-.35-.26-.16 0-.28.09-.35.26-.07.17-.11.43-.11.78v.54z"/></svg>
+            </button>
+            <button class="m-btn m-btn-center" id="mobileNextBtn" title="Next Video" aria-label="Next">
+              <svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>
+            </button>
+          </div>
+
+          <!-- Bottom Bar -->
+          <div class="m-bottom-bar">
+            <!-- Seekbar -->
+            <div class="m-progress-container" id="mobileProgressBarContainer">
+              <div class="m-progress-track">
+                <div class="m-progress-buffer" id="mobileBufferBar"></div>
+                <div class="m-progress-played" id="mobilePlayedBar"></div>
+                <div class="m-progress-thumb" id="mobileSeekThumb"></div>
+              </div>
+              <div class="m-seek-tooltip" id="mobileSeekTooltip">0:00</div>
+            </div>
+
+            <!-- Controls row under progress -->
+            <div class="m-bottom-row">
+              <div class="m-time-display">
+                <span id="mobileTimeCurrent">0:00</span>
+                <span class="m-time-sep">/</span>
+                <span id="mobileTimeDuration">0:00</span>
+              </div>
+              <div class="m-bottom-actions">
+                <button class="m-btn m-btn-sm" id="mobileMuteBtn" title="Mute / Unmute" aria-label="Mute or Unmute">
+                  <svg id="mMuteIconOn" viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
+                  <svg id="mMuteIconOff" viewBox="0 0 24 24" width="20" height="20" fill="currentColor" style="display:none;"><path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27l4.73 4.73H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/></svg>
+                </button>
+                <button class="m-btn m-btn-chip" id="mobileSpeedBtn" title="Playback Speed">1x</button>
+                <button class="m-btn m-btn-sm" id="mobilePipBtn" title="Picture in Picture" aria-label="Picture in Picture">
+                  <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M19 11h-8v6h8v-6zm4 8V5c0-1.1-.9-2-2-2H3c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2zm-2 0H3V5h18v14z"/></svg>
+                </button>
+                <button class="m-btn m-btn-sm" id="mobileFullscreenBtn" title="Fullscreen" aria-label="Toggle Fullscreen">
+                  <svg id="mFsEnterIcon" viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg>
+                  <svg id="mFsExitIcon" viewBox="0 0 24 24" width="20" height="20" fill="currentColor" style="display:none;"><path d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z"/></svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
-    <div class="sidebar">
+    <div class="sidebar" id="sidebarEl">
+
+      <!-- Mobile Drawer Header -->
+      <div class="mobile-drawer-header">
+        <div class="mobile-drawer-title">📁 Video Files</div>
+        <button class="drawer-close-btn" id="closeSidebarBtn" aria-label="Close files drawer">✕</button>
+      </div>
 
       <!-- Tabs -->
       <div class="sidebar-tabs">
@@ -266,6 +1036,9 @@
 
       <!-- Local Panel -->
       <div id="localPanel" style="display:flex; flex-direction:column; flex:1; overflow:hidden;">
+        <div class="mobile-local-actions">
+          <button class="mobile-load-btn" onclick="folderPicker.click()">📂 Open Videos / Folder</button>
+        </div>
         <input type="text" id="search" class="search-bar" placeholder="🔍 Search...">
         <div id="playlist"></div>
       </div>
@@ -342,6 +1115,10 @@ function autoDetectAndResize() {
     resBadge.textContent = `📐 ${vw} × ${vh}`;
     inputW.value = vw;
     inputH.value = vh;
+    const mRes = document.getElementById("mobileResBadge");
+    if (mRes) mRes.textContent = `📐 ${vw} × ${vh}`;
+    const sRes = document.getElementById("settingsResInfo");
+    if (sRes) sRes.textContent = `Resolution: ${vw} × ${vh}`;
 
     // Fit inside available player area keeping aspect ratio
     const section  = document.querySelector(".player-section");
@@ -471,6 +1248,10 @@ function initPlayer(url, time = 0) {
       }
     }
   });
+
+  if (typeof bindMobilePlayer === "function") {
+    bindMobilePlayer(player);
+  }
 }
 
 initPlayer(null);
@@ -700,6 +1481,11 @@ function playVideo(i) {
   currentIndex = i;
   highlightActive(i);
   currentUrl = URL.createObjectURL(files[i]);
+  const titleEl = document.getElementById("mobileVideoTitle");
+  if (titleEl) titleEl.textContent = files[i].name;
+  if (window.innerWidth <= 768 && typeof closeSidebarDrawer === "function") {
+    closeSidebarDrawer();
+  }
   if (player) {
     const type = getVideoMime(currentUrl, files[i]);
     player.src({ src: currentUrl, type });
@@ -796,6 +1582,11 @@ function buildServerList() {
         itemEl.classList.add("active");
 
         currentUrl = videoUrl;
+        const titleEl = document.getElementById("mobileVideoTitle");
+        if (titleEl) titleEl.textContent = fileName;
+        if (window.innerWidth <= 768 && typeof closeSidebarDrawer === "function") {
+          closeSidebarDrawer();
+        }
         if (player) {
           player.src({ src: videoUrl, type: "video/mp4" });
           player.play().catch(() => {});
@@ -827,7 +1618,862 @@ function toggleLoop() {
     loopBtn.style.backgroundColor = loop1Only ? "#16a34a" : "#475569";
     loopBtn.style.background = loop1Only ? "#16a34a" : "#475569";
   }
+  var settingsLoopBtn = document.getElementById("settingsLoopBtn");
+  if (settingsLoopBtn) {
+    settingsLoopBtn.textContent = loop1Only ? "🔁 Loop: 1 Video" : "🔁 Loop: OFF";
+    settingsLoopBtn.style.background = loop1Only ? "#16a34a" : "#242428";
+    settingsLoopBtn.style.borderColor = loop1Only ? "#22c55e" : "#3a3a40";
+  }
+}
+
+// ══════════════════════════════
+//  MOBILE CONTROLS & GESTURES
+// ══════════════════════════════
+
+let mobileControlsTimeout = null;
+let currentBrightness = 1.0; // 0.2 to 2.0
+let isScrubbing = false;
+let osdTimeout = null;
+let rippleTimeouts = {};
+
+// Format seconds into MM:SS or HH:MM:SS
+function formatTime(seconds) {
+  if (isNaN(seconds) || seconds < 0) return "0:00";
+  const s = Math.floor(seconds % 60);
+  const m = Math.floor((seconds / 60) % 60);
+  const h = Math.floor(seconds / 3600);
+  const sStr = s < 10 ? "0" + s : s;
+  if (h > 0) {
+    const mStr = m < 10 ? "0" + m : m;
+    return `${h}:${mStr}:${sStr}`;
+  }
+  return `${m}:${sStr}`;
+}
+
+// Show / Hide Controls Overlay
+const mobileControlsOverlay = document.getElementById("mobileVideoControls");
+
+function showMobileControls() {
+  if (!mobileControlsOverlay) return;
+  mobileControlsOverlay.classList.add("active");
+  resetMobileControlsTimeout();
+}
+
+function hideMobileControls() {
+  if (!mobileControlsOverlay) return;
+  if (isScrubbing) return; // don't hide while scrubbing
+  mobileControlsOverlay.classList.remove("active");
+  if (mobileControlsTimeout) {
+    clearTimeout(mobileControlsTimeout);
+    mobileControlsTimeout = null;
+  }
+}
+
+function toggleMobileControls() {
+  if (!mobileControlsOverlay) return;
+  if (mobileControlsOverlay.classList.contains("active")) {
+    hideMobileControls();
+  } else {
+    showMobileControls();
+  }
+}
+
+function resetMobileControlsTimeout() {
+  if (mobileControlsTimeout) clearTimeout(mobileControlsTimeout);
+  if (player && !player.paused()) {
+    mobileControlsTimeout = setTimeout(() => {
+      hideMobileControls();
+    }, 3500);
+  }
+}
+
+// Keep controls alive on user interaction
+if (mobileControlsOverlay) {
+  mobileControlsOverlay.addEventListener("click", () => {
+    resetMobileControlsTimeout();
+  });
+  mobileControlsOverlay.addEventListener("touchstart", () => {
+    resetMobileControlsTimeout();
+  }, { passive: true });
+}
+
+// Update Play/Pause UI
+function updatePlayPauseUI(isPlaying) {
+  const playIcon = document.getElementById("mPlayIcon");
+  const pauseIcon = document.getElementById("mPauseIcon");
+  if (playIcon && pauseIcon) {
+    playIcon.style.display = isPlaying ? "none" : "block";
+    pauseIcon.style.display = isPlaying ? "block" : "none";
+  }
+  if (isPlaying) {
+    resetMobileControlsTimeout();
+  } else {
+    showMobileControls();
+  }
+}
+
+// Update Progress, Buffering, and Time
+function updateProgressUI() {
+  if (!player) return;
+  const curr = player.currentTime() || 0;
+  const dur = player.duration() || 0;
+
+  const currentEl = document.getElementById("mobileTimeCurrent");
+  const durationEl = document.getElementById("mobileTimeDuration");
+  if (currentEl) currentEl.textContent = formatTime(curr);
+  if (durationEl) durationEl.textContent = formatTime(dur);
+
+  if (!isScrubbing) {
+    const pct = dur > 0 ? (curr / dur) * 100 : 0;
+    const playedBar = document.getElementById("mobilePlayedBar");
+    const thumb = document.getElementById("mobileSeekThumb");
+    if (playedBar) playedBar.style.width = pct + "%";
+    if (thumb) thumb.style.left = pct + "%";
+  }
+
+  // Buffer bar
+  const bufferBar = document.getElementById("mobileBufferBar");
+  if (bufferBar && dur > 0 && player.buffered().length > 0) {
+    const bufEnd = player.buffered().end(player.buffered().length - 1);
+    bufferBar.style.width = Math.min(100, (bufEnd / dur) * 100) + "%";
+  }
+}
+
+// Update Volume UI
+function updateVolumeUI() {
+  if (!player) return;
+  const isMuted = player.muted() || player.volume() === 0;
+  const iconOn = document.getElementById("mMuteIconOn");
+  const iconOff = document.getElementById("mMuteIconOff");
+  if (iconOn && iconOff) {
+    iconOn.style.display = isMuted ? "none" : "block";
+    iconOff.style.display = isMuted ? "block" : "none";
+  }
+}
+
+// Update Speed UI
+function updateSpeedUI() {
+  if (!player) return;
+  const speed = player.playbackRate();
+  const speedBtn = document.getElementById("mobileSpeedBtn");
+  if (speedBtn) speedBtn.textContent = speed + "x";
+
+  // Sync settings bottom sheet chips
+  document.querySelectorAll("#settingsSpeedChips .setting-chip").forEach(chip => {
+    chip.classList.toggle("active", parseFloat(chip.dataset.speed) === speed);
+  });
+}
+
+// Bind player events
+function bindMobilePlayer(p) {
+  if (!p) return;
+  p.on("play", () => updatePlayPauseUI(true));
+  p.on("pause", () => updatePlayPauseUI(false));
+  p.on("timeupdate", updateProgressUI);
+  p.on("durationchange", updateProgressUI);
+  p.on("loadedmetadata", () => {
+    updateProgressUI();
+    const vid = videoContainer.querySelector("video");
+    if (vid && vid.videoWidth && vid.videoHeight) {
+      const resText = `📐 ${vid.videoWidth} × ${vid.videoHeight}`;
+      const resBadge = document.getElementById("mobileResBadge");
+      const settingsInfo = document.getElementById("settingsResInfo");
+      if (resBadge) resBadge.textContent = resText;
+      if (settingsInfo) settingsInfo.textContent = `Resolution: ${vid.videoWidth} × ${vid.videoHeight}`;
+    }
+  });
+  p.on("volumechange", updateVolumeUI);
+  p.on("ratechange", updateSpeedUI);
+  p.on("ended", () => updatePlayPauseUI(false));
+
+  updatePlayPauseUI(!p.paused());
+  updateProgressUI();
+  updateVolumeUI();
+  updateSpeedUI();
+}
+
+// Initial player bind if already created
+if (player) {
+  bindMobilePlayer(player);
+}
+
+// ── OSD Indicators (Brightness & Volume) ──
+function showOsd(type, percent) {
+  const osdEl = document.getElementById(type === "brightness" ? "osdBrightness" : "osdVolume");
+  const fillEl = document.getElementById(type === "brightness" ? "osdBrightnessFill" : "osdVolumeFill");
+  const textEl = document.getElementById(type === "brightness" ? "osdBrightnessText" : "osdVolumeText");
+  if (!osdEl || !fillEl || !textEl) return;
+
+  const clamped = Math.max(0, Math.min(100, percent));
+  fillEl.style.height = clamped + "%";
+  textEl.textContent = clamped + "%";
+  osdEl.classList.add("active");
+
+  if (osdTimeout) clearTimeout(osdTimeout);
+  osdTimeout = setTimeout(() => {
+    const b = document.getElementById("osdBrightness");
+    const v = document.getElementById("osdVolume");
+    if (b) b.classList.remove("active");
+    if (v) v.classList.remove("active");
+  }, 900);
+}
+
+function setBrightness(level) {
+  currentBrightness = Math.max(0.2, Math.min(2.0, level));
+  videoContainer.style.filter = `brightness(${currentBrightness})`;
+  const pct = Math.round((currentBrightness / 2.0) * 100);
+  showOsd("brightness", pct);
+}
+
+function setVolume(val) {
+  if (!player) return;
+  const clamped = Math.max(0, Math.min(1, val));
+  player.volume(clamped);
+  if (clamped > 0 && player.muted()) player.muted(false);
+  showOsd("volume", Math.round(clamped * 100));
+}
+
+// ── Gesture Ripple Animation ──
+function triggerRipple(side, iconText) {
+  let rippleId = side === "left" ? "rippleLeft" : side === "right" ? "rippleRight" : "rippleCenter";
+  const el = document.getElementById(rippleId);
+  if (!el) return;
+
+  if (side === "center" && iconText) {
+    const centerIcon = document.getElementById("rippleCenterIcon");
+    if (centerIcon) centerIcon.textContent = iconText;
+  }
+
+  el.classList.add("active");
+  if (rippleTimeouts[side]) clearTimeout(rippleTimeouts[side]);
+  rippleTimeouts[side] = setTimeout(() => {
+    el.classList.remove("active");
+  }, 500);
+}
+
+// ── Touch Gestures (Single/Double Tap, Swipe, Pinch) ──
+const gestureArea = document.getElementById("mobileGestureArea");
+let lastTapTime = 0;
+let lastTapX = 0;
+let lastTapY = 0;
+let singleTapTimer = null;
+
+let touchStartX = 0;
+let touchStartY = 0;
+let touchStartBrightness = 1.0;
+let touchStartVolume = 1.0;
+let isVerticalSwiping = false;
+let swipeDirection = null; // 'brightness' or 'volume'
+let initialPinchDist = null;
+let initialPinchZoom = 1.0;
+
+if (gestureArea) {
+  gestureArea.addEventListener("touchstart", (e) => {
+    if (e.touches.length === 2) {
+      // Pinch to zoom
+      initialPinchDist = Math.hypot(
+        e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY
+      );
+      initialPinchZoom = zoomLevel;
+      return;
+    }
+
+    if (e.touches.length === 1) {
+      touchStartX = e.touches[0].clientX;
+      touchStartY = e.touches[0].clientY;
+      touchStartBrightness = currentBrightness;
+      touchStartVolume = player ? player.volume() : 1.0;
+      isVerticalSwiping = false;
+      swipeDirection = null;
+    }
+  }, { passive: false });
+
+  gestureArea.addEventListener("touchmove", (e) => {
+    // 2-finger pinch
+    if (e.touches.length === 2 && initialPinchDist) {
+      e.preventDefault();
+      const dist = Math.hypot(
+        e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY
+      );
+      const factor = dist / initialPinchDist;
+      zoomLevel = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, +(initialPinchZoom * factor).toFixed(2)));
+      applyZoom();
+      const zoomSetting = document.getElementById("settingsZoomLabel");
+      if (zoomSetting) zoomSetting.textContent = Math.round(zoomLevel * 100) + "%";
+      return;
+    }
+
+    // 1-finger vertical swipe
+    if (e.touches.length === 1) {
+      const dx = e.touches[0].clientX - touchStartX;
+      const dy = e.touches[0].clientY - touchStartY;
+
+      // In VR mode, allow looking around unless dragging near vertical screen edges
+      if (isVR && Math.abs(dx) > 10) {
+        return; // let VR controls look around
+      }
+
+      if (!isVerticalSwiping) {
+        if (Math.abs(dy) > 16 && Math.abs(dy) > Math.abs(dx) * 1.5) {
+          isVerticalSwiping = true;
+          const rect = gestureArea.getBoundingClientRect();
+          const relX = (touchStartX - rect.left) / rect.width;
+          swipeDirection = relX < 0.5 ? "brightness" : "volume";
+        }
+      }
+
+      if (isVerticalSwiping) {
+        e.preventDefault();
+        const delta = -dy / 200; // sensitivity
+        if (swipeDirection === "brightness") {
+          setBrightness(touchStartBrightness + delta);
+        } else if (swipeDirection === "volume") {
+          setVolume(touchStartVolume + delta);
+        }
+      }
+    }
+  }, { passive: false });
+
+  gestureArea.addEventListener("touchend", (e) => {
+    initialPinchDist = null;
+
+    if (isVerticalSwiping) {
+      isVerticalSwiping = false;
+      return;
+    }
+
+    // Tap detection
+    const now = Date.now();
+    const touch = e.changedTouches ? e.changedTouches[0] : null;
+    if (!touch) return;
+
+    const currentX = touch.clientX;
+    const currentY = touch.clientY;
+    const timeDiff = now - lastTapTime;
+    const distDiff = Math.hypot(currentX - lastTapX, currentY - lastTapY);
+
+    if (timeDiff < 300 && distDiff < 35) {
+      // Double tap!
+      if (singleTapTimer) {
+        clearTimeout(singleTapTimer);
+        singleTapTimer = null;
+      }
+
+      const rect = gestureArea.getBoundingClientRect();
+      const relX = (currentX - rect.left) / rect.width;
+
+      if (relX < 0.35) {
+        // Double tap left: -10s
+        if (player) {
+          player.currentTime(Math.max(0, player.currentTime() - 10));
+          triggerRipple("left");
+        }
+      } else if (relX > 0.65) {
+        // Double tap right: +10s
+        if (player) {
+          player.currentTime(Math.min(player.duration() || 0, player.currentTime() + 10));
+          triggerRipple("right");
+        }
+      } else {
+        // Double tap center: Play/Pause toggle
+        if (player) {
+          if (player.paused()) {
+            player.play().catch(() => {});
+            triggerRipple("center", "▶");
+          } else {
+            player.pause();
+            triggerRipple("center", "⏸");
+          }
+        }
+      }
+
+      lastTapTime = 0; // reset
+    } else {
+      // Single tap candidate
+      lastTapTime = now;
+      lastTapX = currentX;
+      lastTapY = currentY;
+
+      singleTapTimer = setTimeout(() => {
+        toggleMobileControls();
+        singleTapTimer = null;
+      }, 260);
+    }
+  });
+
+  // Support mouse click for desktop testing
+  gestureArea.addEventListener("click", () => {
+    if (Date.now() - lastTapTime > 600) {
+      toggleMobileControls();
+    }
+  });
+}
+
+// ── Touch Progress Bar Scrubbing ──
+const progressContainer = document.getElementById("mobileProgressBarContainer");
+const playedBarEl = document.getElementById("mobilePlayedBar");
+const thumbEl = document.getElementById("mobileSeekThumb");
+const tooltipEl = document.getElementById("mobileSeekTooltip");
+
+function handleSeekInput(clientX) {
+  if (!progressContainer || !player) return 0;
+  const rect = progressContainer.getBoundingClientRect();
+  const pct = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+  const dur = player.duration() || 0;
+  const scrubTime = pct * dur;
+
+  if (playedBarEl) playedBarEl.style.width = (pct * 100) + "%";
+  if (thumbEl) thumbEl.style.left = (pct * 100) + "%";
+
+  if (tooltipEl) {
+    tooltipEl.textContent = formatTime(scrubTime);
+    tooltipEl.style.left = (pct * 100) + "%";
+    tooltipEl.style.display = "block";
+  }
+
+  return scrubTime;
+}
+
+if (progressContainer) {
+  progressContainer.addEventListener("touchstart", (e) => {
+    isScrubbing = true;
+    progressContainer.classList.add("scrubbing");
+    resetMobileControlsTimeout();
+    handleSeekInput(e.touches[0].clientX);
+  }, { passive: true });
+
+  progressContainer.addEventListener("touchmove", (e) => {
+    if (!isScrubbing) return;
+    resetMobileControlsTimeout();
+    handleSeekInput(e.touches[0].clientX);
+  }, { passive: true });
+
+  progressContainer.addEventListener("touchend", (e) => {
+    if (!isScrubbing) return;
+    isScrubbing = false;
+    progressContainer.classList.remove("scrubbing");
+    if (tooltipEl) tooltipEl.style.display = "none";
+    const touch = e.changedTouches ? e.changedTouches[0] : null;
+    if (touch && player && player.duration()) {
+      const scrubTime = handleSeekInput(touch.clientX);
+      player.currentTime(scrubTime);
+    }
+    resetMobileControlsTimeout();
+  });
+
+  // Mouse drag support for desktop
+  progressContainer.addEventListener("mousedown", (e) => {
+    isScrubbing = true;
+    progressContainer.classList.add("scrubbing");
+    handleSeekInput(e.clientX);
+
+    const onMouseMove = (me) => {
+      if (isScrubbing) handleSeekInput(me.clientX);
+    };
+
+    const onMouseUp = (ue) => {
+      isScrubbing = false;
+      progressContainer.classList.remove("scrubbing");
+      if (tooltipEl) tooltipEl.style.display = "none";
+      if (player && player.duration()) {
+        const scrubTime = handleSeekInput(ue.clientX);
+        player.currentTime(scrubTime);
+      }
+      window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("mouseup", onMouseUp);
+      resetMobileControlsTimeout();
+    };
+
+    window.addEventListener("mousemove", onMouseMove);
+    window.addEventListener("mouseup", onMouseUp);
+  });
+}
+
+// ── Mobile Control Buttons Wiring ──
+// Play/Pause
+const mobilePlayPauseBtn = document.getElementById("mobilePlayPauseBtn");
+if (mobilePlayPauseBtn) {
+  mobilePlayPauseBtn.addEventListener("click", () => {
+    if (!player) return;
+    if (player.paused()) {
+      player.play().catch(() => {});
+    } else {
+      player.pause();
+    }
+  });
+}
+
+// Rewind & Forward 10s
+const mobileRewindBtn = document.getElementById("mobileRewindBtn");
+if (mobileRewindBtn) {
+  mobileRewindBtn.addEventListener("click", () => {
+    if (player) {
+      player.currentTime(Math.max(0, player.currentTime() - 10));
+      triggerRipple("left");
+    }
+  });
+}
+const mobileForwardBtn = document.getElementById("mobileForwardBtn");
+if (mobileForwardBtn) {
+  mobileForwardBtn.addEventListener("click", () => {
+    if (player) {
+      player.currentTime(Math.min(player.duration() || 0, player.currentTime() + 10));
+      triggerRipple("right");
+    }
+  });
+}
+
+// Previous & Next Video
+const mobilePrevBtn = document.getElementById("mobilePrevBtn");
+if (mobilePrevBtn) {
+  mobilePrevBtn.addEventListener("click", () => {
+    document.getElementById("prevBtn").click();
+  });
+}
+const mobileNextBtn = document.getElementById("mobileNextBtn");
+if (mobileNextBtn) {
+  mobileNextBtn.addEventListener("click", () => {
+    document.getElementById("nextBtn").click();
+  });
+}
+
+// Mute / Unmute
+const mobileMuteBtn = document.getElementById("mobileMuteBtn");
+if (mobileMuteBtn) {
+  mobileMuteBtn.addEventListener("click", () => {
+    if (!player) return;
+    player.muted(!player.muted());
+    updateVolumeUI();
+  });
+}
+
+// Speed Button in Bottom Bar (Cycles through common speeds)
+const mobileSpeedBtn = document.getElementById("mobileSpeedBtn");
+if (mobileSpeedBtn) {
+  const commonSpeeds = [1, 1.25, 1.5, 2, 0.5, 0.75];
+  mobileSpeedBtn.addEventListener("click", () => {
+    if (!player) return;
+    const current = player.playbackRate();
+    const currIdx = commonSpeeds.indexOf(current);
+    const nextSpeed = commonSpeeds[(currIdx + 1) % commonSpeeds.length];
+    player.playbackRate(nextSpeed);
+    const desktopSelect = document.getElementById("speedSelect");
+    if (desktopSelect) desktopSelect.value = nextSpeed;
+    updateSpeedUI();
+  });
+}
+
+// Picture-in-Picture
+const mobilePipBtn = document.getElementById("mobilePipBtn");
+if (mobilePipBtn) {
+  mobilePipBtn.addEventListener("click", async () => {
+    const vid = videoContainer.querySelector("video");
+    if (!vid) return;
+    try {
+      if (document.pictureInPictureElement) {
+        await document.exitPictureInPicture();
+      } else if (vid.requestPictureInPicture) {
+        await vid.requestPictureInPicture();
+      } else if (vid.webkitSetPresentationMode) {
+        vid.webkitSetPresentationMode(
+          vid.webkitPresentationMode === "picture-in-picture" ? "inline" : "picture-in-picture"
+        );
+      }
+    } catch (err) {
+      console.warn("PiP not available:", err);
+    }
+  });
+}
+
+// Fullscreen
+const mobileFullscreenBtn = document.getElementById("mobileFullscreenBtn");
+function toggleMobileFullscreen() {
+  const target = document.getElementById("playerWrapper") || videoContainer;
+  const isFs = !!(document.fullscreenElement || document.webkitFullscreenElement);
+  if (!isFs) {
+    if (target.requestFullscreen) {
+      target.requestFullscreen().catch(() => {
+        const vid = videoContainer.querySelector("video");
+        if (vid && vid.webkitEnterFullscreen) vid.webkitEnterFullscreen();
+      });
+    } else if (target.webkitRequestFullscreen) {
+      target.webkitRequestFullscreen();
+    } else {
+      const vid = videoContainer.querySelector("video");
+      if (vid && vid.webkitEnterFullscreen) vid.webkitEnterFullscreen();
+    }
+  } else {
+    if (document.exitFullscreen) {
+      document.exitFullscreen();
+    } else if (document.webkitExitFullscreen) {
+      document.webkitExitFullscreen();
+    }
+  }
+}
+
+if (mobileFullscreenBtn) {
+  mobileFullscreenBtn.addEventListener("click", toggleMobileFullscreen);
+}
+
+function updateFullscreenIcons() {
+  const isFs = !!(document.fullscreenElement || document.webkitFullscreenElement);
+  const enterIcon = document.getElementById("mFsEnterIcon");
+  const exitIcon = document.getElementById("mFsExitIcon");
+  if (enterIcon && exitIcon) {
+    enterIcon.style.display = isFs ? "none" : "block";
+    exitIcon.style.display = isFs ? "block" : "none";
+  }
+}
+document.addEventListener("fullscreenchange", updateFullscreenIcons);
+document.addEventListener("webkitfullscreenchange", updateFullscreenIcons);
+
+// ── Sidebar Drawer Controls ──
+const sidebarEl = document.getElementById("sidebarEl");
+const drawerBackdrop = document.getElementById("drawerBackdrop");
+const mobileDrawerBtn = document.getElementById("mobileDrawerBtn");
+const closeSidebarBtn = document.getElementById("closeSidebarBtn");
+
+function openSidebarDrawer() {
+  if (sidebarEl) sidebarEl.classList.add("open");
+  if (drawerBackdrop) drawerBackdrop.classList.add("active");
+}
+
+function closeSidebarDrawer() {
+  if (sidebarEl) sidebarEl.classList.remove("open");
+  if (drawerBackdrop) drawerBackdrop.classList.remove("active");
+}
+
+if (mobileDrawerBtn) mobileDrawerBtn.addEventListener("click", openSidebarDrawer);
+if (closeSidebarBtn) closeSidebarBtn.addEventListener("click", closeSidebarDrawer);
+if (drawerBackdrop) drawerBackdrop.addEventListener("click", closeSidebarDrawer);
+
+// ── Settings Bottom Sheet Controls ──
+const settingsModal = document.getElementById("settingsModal");
+const settingsBackdrop = document.getElementById("settingsBackdrop");
+const mobileSettingsBtn = document.getElementById("mobileSettingsBtn");
+const closeSettingsBtn = document.getElementById("closeSettingsBtn");
+
+function openSettings() {
+  if (!settingsModal) return;
+  settingsModal.classList.add("open");
+  if (settingsBackdrop) settingsBackdrop.classList.add("active");
+
+  // Sync settings state
+  if (player) {
+    updateSpeedUI();
+  }
+  const modeBtnEl = document.getElementById("modeBtn");
+  const settingsModeBtn = document.getElementById("settingsModeBtn");
+  if (modeBtnEl && settingsModeBtn) {
+    settingsModeBtn.textContent = modeBtnEl.textContent;
+  }
+  const rotateBtnEl = document.getElementById("rotateBtn");
+  const settingsRotateBtn = document.getElementById("settingsRotateBtn");
+  if (rotateBtnEl && settingsRotateBtn) {
+    settingsRotateBtn.textContent = rotateBtnEl.textContent;
+  }
+  const zoomLabel = document.getElementById("settingsZoomLabel");
+  if (zoomLabel) zoomLabel.textContent = Math.round(zoomLevel * 100) + "%";
+
+  const settingsLoopBtn = document.getElementById("settingsLoopBtn");
+  if (settingsLoopBtn) {
+    settingsLoopBtn.textContent = loop1Only ? "🔁 Loop: 1 Video" : "🔁 Loop: OFF";
+    settingsLoopBtn.style.background = loop1Only ? "#16a34a" : "#242428";
+    settingsLoopBtn.style.borderColor = loop1Only ? "#22c55e" : "#3a3a40";
+  }
+}
+
+function closeSettings() {
+  if (!settingsModal) return;
+  settingsModal.classList.remove("open");
+  if (settingsBackdrop) settingsBackdrop.classList.remove("active");
+}
+
+if (mobileSettingsBtn) mobileSettingsBtn.addEventListener("click", openSettings);
+if (closeSettingsBtn) closeSettingsBtn.addEventListener("click", closeSettings);
+if (settingsBackdrop) settingsBackdrop.addEventListener("click", closeSettings);
+
+// Settings sheet interactive items
+document.querySelectorAll("#settingsSpeedChips .setting-chip").forEach(chip => {
+  chip.addEventListener("click", () => {
+    const spd = parseFloat(chip.dataset.speed);
+    if (player && spd) {
+      player.playbackRate(spd);
+      const desktopSelect = document.getElementById("speedSelect");
+      if (desktopSelect) desktopSelect.value = spd;
+      updateSpeedUI();
+    }
+  });
+});
+
+const settingsModeBtn = document.getElementById("settingsModeBtn");
+if (settingsModeBtn) {
+  settingsModeBtn.addEventListener("click", () => {
+    document.getElementById("modeBtn").click();
+    setTimeout(() => {
+      const modeBtnEl = document.getElementById("modeBtn");
+      if (modeBtnEl) settingsModeBtn.textContent = modeBtnEl.textContent;
+    }, 100);
+  });
+}
+
+const settingsRotateBtn = document.getElementById("settingsRotateBtn");
+if (settingsRotateBtn) {
+  settingsRotateBtn.addEventListener("click", () => {
+    document.getElementById("rotateBtn").click();
+    setTimeout(() => {
+      const rBtn = document.getElementById("rotateBtn");
+      if (rBtn) settingsRotateBtn.textContent = rBtn.textContent;
+    }, 50);
+  });
+}
+
+const settingsZoomInBtn = document.getElementById("settingsZoomInBtn");
+if (settingsZoomInBtn) {
+  settingsZoomInBtn.addEventListener("click", () => {
+    document.getElementById("zoomInBtn").click();
+    const l = document.getElementById("settingsZoomLabel");
+    if (l) l.textContent = Math.round(zoomLevel * 100) + "%";
+  });
+}
+const settingsZoomOutBtn = document.getElementById("settingsZoomOutBtn");
+if (settingsZoomOutBtn) {
+  settingsZoomOutBtn.addEventListener("click", () => {
+    document.getElementById("zoomOutBtn").click();
+    const l = document.getElementById("settingsZoomLabel");
+    if (l) l.textContent = Math.round(zoomLevel * 100) + "%";
+  });
+}
+const settingsZoomResetBtn = document.getElementById("settingsZoomResetBtn");
+if (settingsZoomResetBtn) {
+  settingsZoomResetBtn.addEventListener("click", () => {
+    document.getElementById("zoomResetBtn").click();
+    const l = document.getElementById("settingsZoomLabel");
+    if (l) l.textContent = "100%";
+  });
+}
+
+// Screen fit chips
+const fitAutoChip = document.getElementById("fitAutoChip");
+const fitFillChip = document.getElementById("fitFillChip");
+const fitContainChip = document.getElementById("fitContainChip");
+
+function setActiveFitChip(activeBtn) {
+  [fitAutoChip, fitFillChip, fitContainChip].forEach(c => {
+    if (c) c.classList.remove("active");
+  });
+  if (activeBtn) activeBtn.classList.add("active");
+}
+
+if (fitAutoChip) {
+  fitAutoChip.addEventListener("click", () => {
+    setActiveFitChip(fitAutoChip);
+    resetToAuto();
+    const vid = videoContainer.querySelector("video");
+    if (vid) vid.style.objectFit = "contain";
+  });
+}
+if (fitFillChip) {
+  fitFillChip.addEventListener("click", () => {
+    setActiveFitChip(fitFillChip);
+    const vid = videoContainer.querySelector("video");
+    if (vid) vid.style.objectFit = "cover";
+  });
+}
+if (fitContainChip) {
+  fitContainChip.addEventListener("click", () => {
+    setActiveFitChip(fitContainChip);
+    const vid = videoContainer.querySelector("video");
+    if (vid) vid.style.objectFit = "contain";
+  });
 }
 </script>
+<<<<<<< HEAD
+
+  <!-- Drawer Backdrop for mobile -->
+  <div id="drawerBackdrop" class="drawer-backdrop"></div>
+
+  <!-- Settings Bottom Sheet -->
+  <div id="settingsModal" class="settings-modal">
+    <div id="settingsBackdrop" class="settings-backdrop"></div>
+    <div class="settings-sheet">
+      <div class="settings-handle"></div>
+      <div class="settings-header">
+        <div class="settings-title">⚙️ Video Settings</div>
+        <button class="settings-close-btn" id="closeSettingsBtn">✕</button>
+      </div>
+      <div class="settings-body">
+        <!-- Playback Speed -->
+        <div class="setting-group">
+          <label class="setting-label">⚡ Playback Speed</label>
+          <div class="setting-chips" id="settingsSpeedChips">
+            <button class="setting-chip" data-speed="0.25">0.25x</button>
+            <button class="setting-chip" data-speed="0.5">0.5x</button>
+            <button class="setting-chip" data-speed="0.75">0.75x</button>
+            <button class="setting-chip active" data-speed="1">1x Normal</button>
+            <button class="setting-chip" data-speed="1.25">1.25x</button>
+            <button class="setting-chip" data-speed="1.5">1.5x</button>
+            <button class="setting-chip" data-speed="2">2x</button>
+            <button class="setting-chip" data-speed="3">3x</button>
+            <button class="setting-chip" data-speed="4">4x</button>
+          </div>
+        </div>
+
+        <!-- Loop & Mode row -->
+        <div class="setting-row">
+          <div class="setting-col">
+            <label class="setting-label">🔁 Loop Mode</label>
+            <button class="setting-toggle-btn" id="settingsLoopBtn" onclick="toggleLoop()">🔁 Loop: 1 Video</button>
+          </div>
+          <div class="setting-col">
+            <label class="setting-label">🔄 Display Mode</label>
+            <button class="setting-toggle-btn" id="settingsModeBtn">🔄 VR Mode</button>
+          </div>
+        </div>
+
+        <!-- Rotate & Zoom -->
+        <div class="setting-row">
+          <div class="setting-col">
+            <label class="setting-label">🔃 Rotation</label>
+            <button class="setting-toggle-btn" id="settingsRotateBtn">🔃 Rotate 0°</button>
+          </div>
+          <div class="setting-col">
+            <label class="setting-label">🔍 Zoom: <span id="settingsZoomLabel">100%</span></label>
+            <div class="setting-btn-group">
+              <button class="setting-mini-btn" id="settingsZoomOutBtn">➖</button>
+              <button class="setting-mini-btn" id="settingsZoomResetBtn">⟳</button>
+              <button class="setting-mini-btn" id="settingsZoomInBtn">➕</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Aspect Ratio / Fit -->
+        <div class="setting-group">
+          <label class="setting-label">📐 Screen Fit</label>
+          <div class="setting-chips">
+            <button class="setting-chip active" id="fitAutoChip">Auto Fit</button>
+            <button class="setting-chip" id="fitFillChip">Fill Screen</button>
+            <button class="setting-chip" id="fitContainChip">Original Ratio</button>
+          </div>
+        </div>
+
+        <!-- Load local file action -->
+        <div class="setting-group">
+          <label class="setting-label">📁 File Access</label>
+          <button class="setting-action-btn" onclick="folderPicker.click(); closeSettings();">📂 Open Local Videos (.xyz, .mp4, etc.)</button>
+        </div>
+
+        <!-- Video Info -->
+        <div class="setting-info" id="settingsVideoInfo">
+          <span id="settingsResInfo">Resolution: Not loaded</span>
+        </div>
+      </div>
+    </div>
+  </div>
+=======
+<script src="local-video.js"></script>
+>>>>>>> parent of e7bec45 (tr1)
 </body>
 </html>
