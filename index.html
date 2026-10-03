@@ -2,7 +2,6 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>VR / Normal Video Player</title>
 <link href="https://vjs.zencdn.net/8.10.0/video-js.css" rel="stylesheet" />
 <link href="https://unpkg.com/videojs-vr/dist/videojs-vr.css" rel="stylesheet">
@@ -183,673 +182,6 @@
   .server-status {
     font-size: 11px; color: #666; text-align: center; padding: 16px 8px;
   }
-
-  /* ── Mobile & Responsive Player Overlay Styles ── */
-  .player-wrapper {
-    position: relative;
-    width: 100%;
-    height: 100%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    overflow: hidden;
-    background: #000;
-    touch-action: manipulation;
-    user-select: none;
-    -webkit-user-select: none;
-  }
-
-  /* Transparent gesture capture layer behind controls */
-  .gesture-area {
-    position: absolute;
-    inset: 0;
-    z-index: 5;
-    background: transparent;
-    touch-action: none;
-  }
-
-  /* Double-tap ripple indicators */
-  .gesture-ripple {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%) scale(0.7);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    background: rgba(0, 0, 0, 0.7);
-    color: #fff;
-    border-radius: 50%;
-    width: 80px;
-    height: 80px;
-    z-index: 15;
-    pointer-events: none;
-    opacity: 0;
-    transition: opacity 0.25s ease, transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
-  }
-  .gesture-ripple.active {
-    opacity: 1;
-    transform: translateY(-50%) scale(1);
-  }
-  .ripple-left { left: 12%; }
-  .ripple-right { right: 12%; }
-  .ripple-center { left: 50%; transform: translate(-50%, -50%) scale(0.7); width: 70px; height: 70px; }
-  .ripple-center.active { transform: translate(-50%, -50%) scale(1); }
-  .ripple-icon { font-size: 24px; line-height: 1; }
-  .ripple-text { font-size: 11px; font-weight: bold; margin-top: 3px; color: #ff4444; }
-
-  /* OSD Brightness / Volume */
-  .osd-bar {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 44px;
-    height: 140px;
-    background: rgba(18, 18, 20, 0.85);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    border-radius: 22px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: space-between;
-    padding: 10px 4px;
-    z-index: 25;
-    pointer-events: none;
-    opacity: 0;
-    transition: opacity 0.3s ease;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-  }
-  .osd-bar.active { opacity: 1; }
-  .osd-left { left: 18px; }
-  .osd-right { right: 18px; }
-  .osd-icon { font-size: 16px; color: #fff; }
-  .osd-track {
-    width: 6px;
-    flex: 1;
-    margin: 8px 0;
-    background: rgba(255, 255, 255, 0.2);
-    border-radius: 3px;
-    position: relative;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-end;
-  }
-  .osd-fill {
-    width: 100%;
-    background: #0088ff;
-    border-radius: 3px;
-    transition: height 0.05s ease;
-    height: 50%;
-  }
-  .osd-left .osd-fill { background: #ffaa00; }
-  .osd-text { font-size: 10px; font-weight: bold; color: #ddd; }
-
-  /* Mobile Controls Overlay */
-  .mobile-controls-overlay {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    background: linear-gradient(180deg, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.15) 25%, rgba(0,0,0,0.15) 75%, rgba(0,0,0,0.85) 100%);
-    opacity: 0;
-    visibility: hidden;
-    pointer-events: none;
-    transition: opacity 0.28s ease, visibility 0.28s ease;
-    z-index: 10;
-  }
-  .mobile-controls-overlay.active {
-    opacity: 1;
-    visibility: visible;
-    pointer-events: auto;
-  }
-
-  /* Overlay Top Bar */
-  .m-top-bar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 10px 14px;
-    gap: 8px;
-    pointer-events: auto;
-  }
-  .m-video-title-wrap {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    min-width: 0;
-    padding: 0 4px;
-  }
-  .m-video-title {
-    font-size: 13px;
-    font-weight: 600;
-    color: #fff;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  .m-res-badge {
-    font-size: 10px;
-    color: #0af;
-    opacity: 0.9;
-  }
-
-  /* Center Controls */
-  .m-center-controls {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 16px;
-    pointer-events: auto;
-  }
-  .m-btn {
-    border: none;
-    background: transparent;
-    color: #fff;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    touch-action: manipulation;
-    -webkit-tap-highlight-color: transparent;
-    transition: transform 0.15s ease, background-color 0.15s ease;
-  }
-  .m-btn:active { transform: scale(0.92); }
-  .m-btn-icon {
-    width: 44px;
-    height: 44px;
-    border-radius: 50%;
-    background: rgba(0, 0, 0, 0.45);
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
-  }
-  .m-btn-center {
-    width: 48px;
-    height: 48px;
-    border-radius: 50%;
-    background: rgba(0, 0, 0, 0.55);
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
-  }
-  .m-btn-play-pause {
-    width: 60px;
-    height: 60px;
-    border-radius: 50%;
-    background: rgba(204, 0, 0, 0.9);
-    box-shadow: 0 4px 14px rgba(204, 0, 0, 0.4);
-  }
-  .m-btn-play-pause:hover { filter: brightness(1.2); }
-  .m-btn-sm {
-    width: 44px;
-    height: 44px;
-    border-radius: 8px;
-    background: transparent;
-  }
-  .m-btn-chip {
-    padding: 6px 10px;
-    min-width: 44px;
-    height: 34px;
-    border-radius: 6px;
-    background: rgba(255, 255, 255, 0.15);
-    font-size: 12px;
-    font-weight: bold;
-    color: #fff;
-  }
-
-  /* Bottom Bar */
-  .m-bottom-bar {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    padding: 6px 14px 12px 14px;
-    pointer-events: auto;
-  }
-  .m-progress-container {
-    width: 100%;
-    height: 32px;
-    display: flex;
-    align-items: center;
-    position: relative;
-    cursor: pointer;
-    touch-action: none;
-  }
-  .m-progress-track {
-    width: 100%;
-    height: 5px;
-    background: rgba(255, 255, 255, 0.25);
-    border-radius: 3px;
-    position: relative;
-    transition: height 0.15s ease;
-  }
-  .m-progress-container:hover .m-progress-track,
-  .m-progress-container.scrubbing .m-progress-track {
-    height: 8px;
-  }
-  .m-progress-buffer {
-    position: absolute;
-    left: 0;
-    top: 0;
-    height: 100%;
-    background: rgba(255, 255, 255, 0.45);
-    border-radius: 3px;
-    width: 0%;
-  }
-  .m-progress-played {
-    position: absolute;
-    left: 0;
-    top: 0;
-    height: 100%;
-    background: #cc0000;
-    border-radius: 3px;
-    width: 0%;
-  }
-  .m-progress-thumb {
-    position: absolute;
-    top: 50%;
-    left: 0%;
-    width: 14px;
-    height: 14px;
-    border-radius: 50%;
-    background: #cc0000;
-    transform: translate(-50%, -50%);
-    box-shadow: 0 0 5px rgba(0, 0, 0, 0.6);
-    transition: transform 0.15s ease;
-  }
-  .m-progress-container:hover .m-progress-thumb,
-  .m-progress-container.scrubbing .m-progress-thumb {
-    transform: translate(-50%, -50%) scale(1.3);
-  }
-  .m-seek-tooltip {
-    position: absolute;
-    top: -28px;
-    left: 0%;
-    transform: translateX(-50%);
-    background: rgba(0, 0, 0, 0.85);
-    color: #fff;
-    padding: 3px 6px;
-    border-radius: 4px;
-    font-size: 11px;
-    font-weight: bold;
-    display: none;
-    pointer-events: none;
-    white-space: nowrap;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-  }
-
-  /* Bottom Row */
-  .m-bottom-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-  .m-time-display {
-    font-size: 12px;
-    font-weight: 500;
-    color: #ddd;
-    font-variant-numeric: tabular-nums;
-  }
-  .m-time-sep { margin: 0 3px; color: #777; }
-  .m-bottom-actions {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-  }
-
-  /* Drawer Backdrop */
-  .drawer-backdrop, .settings-backdrop {
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.65);
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
-    z-index: 998;
-    opacity: 0;
-    visibility: hidden;
-    transition: opacity 0.25s ease, visibility 0.25s ease;
-  }
-  .drawer-backdrop.active, .settings-backdrop.active {
-    opacity: 1;
-    visibility: visible;
-  }
-
-  /* Mobile Drawer Header & Actions (hidden on desktop) */
-  .mobile-drawer-header {
-    display: none;
-  }
-  .mobile-local-actions {
-    display: none;
-  }
-
-  /* Settings Modal / Bottom Sheet */
-  .settings-modal {
-    position: fixed;
-    inset: 0;
-    z-index: 2000;
-    pointer-events: none;
-    display: flex;
-    align-items: flex-end;
-    justify-content: center;
-  }
-  .settings-modal.open {
-    pointer-events: auto;
-  }
-  .settings-sheet {
-    position: relative;
-    width: 100%;
-    max-width: 520px;
-    max-height: 85vh;
-    background: #18181b;
-    border-radius: 20px 20px 0 0;
-    border: 1px solid #333;
-    border-bottom: none;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    transform: translateY(100%);
-    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-    z-index: 2001;
-    box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.8);
-  }
-  .settings-modal.open .settings-sheet {
-    transform: translateY(0);
-  }
-  .settings-handle {
-    width: 36px;
-    height: 4px;
-    background: #444;
-    border-radius: 2px;
-    margin: 8px auto 0 auto;
-  }
-  .settings-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 12px 18px;
-    border-bottom: 1px solid #2a2a2a;
-  }
-  .settings-title {
-    font-size: 15px;
-    font-weight: bold;
-    color: #fff;
-  }
-  .settings-close-btn {
-    background: #2a2a2a;
-    border: none;
-    color: #ccc;
-    width: 30px;
-    height: 30px;
-    border-radius: 50%;
-    font-size: 14px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  .settings-body {
-    overflow-y: auto;
-    padding: 14px 18px 24px 18px;
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-  }
-  .setting-group {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
-  .setting-row {
-    display: flex;
-    gap: 10px;
-  }
-  .setting-col {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-  }
-  .setting-label {
-    font-size: 12px;
-    color: #aaa;
-    font-weight: 600;
-  }
-  .setting-chips {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-  }
-  .setting-chip {
-    padding: 6px 12px;
-    background: #242428;
-    border: 1px solid #333;
-    color: #ddd;
-    border-radius: 6px;
-    font-size: 12px;
-    cursor: pointer;
-    transition: 0.15s;
-    font-weight: 500;
-  }
-  .setting-chip:hover {
-    background: #333;
-    color: #fff;
-  }
-  .setting-chip.active {
-    background: #cc0000;
-    color: #fff;
-    border-color: #ff3333;
-  }
-  .setting-toggle-btn {
-    width: 100%;
-    padding: 9px 12px;
-    background: #242428;
-    border: 1px solid #3a3a40;
-    color: #fff;
-    border-radius: 6px;
-    font-size: 12px;
-    font-weight: 600;
-    cursor: pointer;
-    text-align: center;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  .setting-btn-group {
-    display: flex;
-    gap: 4px;
-  }
-  .setting-mini-btn {
-    flex: 1;
-    padding: 7px;
-    background: #1a5c30;
-    border: none;
-    border-radius: 5px;
-    color: #fff;
-    font-size: 12px;
-    font-weight: bold;
-    cursor: pointer;
-  }
-  .setting-action-btn {
-    width: 100%;
-    padding: 10px;
-    background: #0055bb;
-    border: none;
-    border-radius: 6px;
-    color: #fff;
-    font-size: 13px;
-    font-weight: bold;
-    cursor: pointer;
-  }
-  .setting-info {
-    padding: 8px 12px;
-    background: #121214;
-    border: 1px solid #2a2a2a;
-    border-radius: 6px;
-    font-size: 11px;
-    color: #888;
-  }
-
-  /* ── Responsive Mobile Rules (Phones & Tablets <= 768px) ── */
-  @media (max-width: 768px) {
-    /* Hide desktop toolbar */
-    .controls-bar {
-      display: none !important;
-    }
-
-    /* Main Area fills entire screen */
-    .main-area {
-      flex: 1;
-      position: relative;
-      width: 100vw;
-      height: 100vh;
-      height: 100dvh;
-      overflow: hidden;
-    }
-
-    /* Video section uses 100% of available screen */
-    .player-section {
-      width: 100vw !important;
-      height: 100% !important;
-      padding: 0 !important;
-      position: relative;
-    }
-
-    #video-container {
-      width: 100% !important;
-      height: 100% !important;
-      max-width: 100vw !important;
-      max-height: 100vh !important;
-      border-radius: 0 !important;
-    }
-
-    /* Hide Video.js default controls on mobile so custom controls take over */
-    .video-js .vjs-control-bar {
-      display: none !important;
-    }
-    .video-js .vjs-big-play-button {
-      display: none !important;
-    }
-
-    /* Sidebar converts into a smooth slide-in Drawer */
-    .sidebar {
-      position: fixed;
-      top: 0;
-      right: 0;
-      bottom: 0;
-      width: 86%;
-      max-width: 360px;
-      z-index: 1000;
-      background: #18181b;
-      box-shadow: -6px 0 25px rgba(0, 0, 0, 0.8);
-      transform: translateX(100%);
-      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-    .sidebar.open {
-      transform: translateX(0);
-    }
-
-    .mobile-drawer-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 12px 14px;
-      background: #121214;
-      border-bottom: 1px solid #2a2a2a;
-    }
-    .mobile-drawer-title {
-      font-size: 14px;
-      font-weight: bold;
-      color: #fff;
-    }
-    .drawer-close-btn {
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-      background: #27272a;
-      border: none;
-      color: #fff;
-      font-size: 14px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .mobile-local-actions {
-      display: block;
-      padding: 8px 10px;
-      background: #141416;
-      border-bottom: 1px solid #282828;
-    }
-    .mobile-load-btn {
-      width: 100%;
-      padding: 9px 12px;
-      background: #cc0000;
-      color: #fff;
-      border: none;
-      border-radius: 6px;
-      font-size: 13px;
-      font-weight: bold;
-      cursor: pointer;
-    }
-
-    /* Touch targets for video items in playlist */
-    .video-item {
-      min-height: 52px;
-      padding: 10px;
-      margin-bottom: 8px;
-    }
-    .video-item span {
-      font-size: 13px;
-      margin-top: 6px;
-    }
-
-    .server-item {
-      min-height: 48px;
-      padding: 10px 12px;
-    }
-  }
-
-  /* ── Phone Landscape Mode (< 900px wide & landscape) ── */
-  @media (max-width: 900px) and (orientation: landscape) {
-    .controls-bar {
-      display: none !important;
-    }
-    .main-area {
-      width: 100vw;
-      height: 100vh;
-      height: 100dvh;
-    }
-    .player-section {
-      width: 100vw !important;
-      height: 100vh !important;
-      padding: 0 !important;
-    }
-    #video-container {
-      width: 100% !important;
-      height: 100% !important;
-    }
-    .m-top-bar {
-      padding: 6px 14px;
-    }
-    .m-center-controls {
-      gap: 12px;
-    }
-    .m-btn-center {
-      width: 44px;
-      height: 44px;
-    }
-    .m-btn-play-pause {
-      width: 52px;
-      height: 52px;
-    }
-    .m-bottom-bar {
-      padding: 4px 14px 8px 14px;
-    }
-  }
 </style>
 </head>
 <body>
@@ -921,111 +253,10 @@
   <div class="main-area">
 
     <div class="player-section">
-      <div class="player-wrapper" id="playerWrapper">
-        <div id="video-container"></div>
-
-        <!-- Gesture Tap / Swipe Area -->
-        <div id="mobileGestureArea" class="gesture-area"></div>
-
-        <!-- Double Tap Ripples -->
-        <div id="rippleLeft" class="gesture-ripple ripple-left"><span class="ripple-icon">⏪</span><span class="ripple-text">10s</span></div>
-        <div id="rippleRight" class="gesture-ripple ripple-right"><span class="ripple-icon">⏩</span><span class="ripple-text">10s</span></div>
-        <div id="rippleCenter" class="gesture-ripple ripple-center"><span class="ripple-icon" id="rippleCenterIcon">▶</span></div>
-
-        <!-- OSD Bars for Brightness & Volume -->
-        <div id="osdBrightness" class="osd-bar osd-left">
-          <span class="osd-icon">☀️</span>
-          <div class="osd-track"><div class="osd-fill" id="osdBrightnessFill"></div></div>
-          <span class="osd-text" id="osdBrightnessText">100%</span>
-        </div>
-        <div id="osdVolume" class="osd-bar osd-right">
-          <span class="osd-icon" id="osdVolumeIcon">🔊</span>
-          <div class="osd-track"><div class="osd-fill" id="osdVolumeFill"></div></div>
-          <span class="osd-text" id="osdVolumeText">100%</span>
-        </div>
-
-        <!-- Mobile Controls Overlay -->
-        <div id="mobileVideoControls" class="mobile-controls-overlay">
-          <!-- Top Bar -->
-          <div class="m-top-bar">
-            <button class="m-btn m-btn-icon" id="mobileDrawerBtn" title="Files & Playlist" aria-label="Open Files">
-              <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg>
-            </button>
-            <div class="m-video-title-wrap">
-              <span id="mobileVideoTitle" class="m-video-title">No Video Selected</span>
-              <span id="mobileResBadge" class="m-res-badge">📐 No Video</span>
-            </div>
-            <button class="m-btn m-btn-icon" id="mobileSettingsBtn" title="Settings" aria-label="Video Settings">
-              <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.488.488 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54A.484.484 0 0 0 14 2h-4c-.25 0-.46.18-.49.42l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.63 8.47c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.49.41h4c.25 0 .46-.18.49-.42l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
-            </button>
-          </div>
-
-          <!-- Center Controls -->
-          <div class="m-center-controls">
-            <button class="m-btn m-btn-center" id="mobilePrevBtn" title="Previous Video" aria-label="Previous">
-              <svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>
-            </button>
-            <button class="m-btn m-btn-center" id="mobileRewindBtn" title="Rewind 10s" aria-label="Rewind 10 seconds">
-              <svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor"><path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8zm-1.1 11h-.85v-3.26l-1.01.35v-.69l1.76-.63h.1v4.23zm3.17-2.32c0-.52.09-.92.26-1.21.18-.29.43-.43.76-.43.33 0 .58.14.76.43.18.29.27.69.27 1.21v.44c0 .52-.09.93-.27 1.22-.18.29-.43.43-.76.43-.33 0-.58-.14-.76-.43-.17-.29-.26-.7-.26-1.22v-.44zm.84.49c0 .35.04.61.11.78.07.17.19.26.35.26.16 0 .28-.09.35-.26.07-.17.11-.43.11-.78v-.54c0-.35-.04-.61-.11-.78-.07-.17-.19-.26-.35-.26-.16 0-.28.09-.35.26-.07.17-.11.43-.11.78v.54z"/></svg>
-            </button>
-            <button class="m-btn m-btn-play-pause" id="mobilePlayPauseBtn" title="Play / Pause" aria-label="Play or Pause">
-              <svg id="mPlayIcon" viewBox="0 0 24 24" width="34" height="34" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
-              <svg id="mPauseIcon" viewBox="0 0 24 24" width="34" height="34" fill="currentColor" style="display:none;"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
-            </button>
-            <button class="m-btn m-btn-center" id="mobileForwardBtn" title="Forward 10s" aria-label="Forward 10 seconds">
-              <svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor"><path d="M12 5V1l5 5-5 5V7c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6h2c0 4.42-3.58 8-8 8s-8-3.58-8-8 3.58-8 8-8zm-1.1 11h-.85v-3.26l-1.01.35v-.69l1.76-.63h.1v4.23zm3.17-2.32c0-.52.09-.92.26-1.21.18-.29.43-.43.76-.43.33 0 .58.14.76.43.18.29.27.69.27 1.21v.44c0 .52-.09.93-.27 1.22-.18.29-.43.43-.76.43-.33 0-.58-.14-.76-.43-.17-.29-.26-.7-.26-1.22v-.44zm.84.49c0 .35.04.61.11.78.07.17.19.26.35.26.16 0 .28-.09.35-.26.07-.17.11-.43.11-.78v-.54c0-.35-.04-.61-.11-.78-.07-.17-.19-.26-.35-.26-.16 0-.28.09-.35.26-.07.17-.11.43-.11.78v.54z"/></svg>
-            </button>
-            <button class="m-btn m-btn-center" id="mobileNextBtn" title="Next Video" aria-label="Next">
-              <svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>
-            </button>
-          </div>
-
-          <!-- Bottom Bar -->
-          <div class="m-bottom-bar">
-            <!-- Seekbar -->
-            <div class="m-progress-container" id="mobileProgressBarContainer">
-              <div class="m-progress-track">
-                <div class="m-progress-buffer" id="mobileBufferBar"></div>
-                <div class="m-progress-played" id="mobilePlayedBar"></div>
-                <div class="m-progress-thumb" id="mobileSeekThumb"></div>
-              </div>
-              <div class="m-seek-tooltip" id="mobileSeekTooltip">0:00</div>
-            </div>
-
-            <!-- Controls row under progress -->
-            <div class="m-bottom-row">
-              <div class="m-time-display">
-                <span id="mobileTimeCurrent">0:00</span>
-                <span class="m-time-sep">/</span>
-                <span id="mobileTimeDuration">0:00</span>
-              </div>
-              <div class="m-bottom-actions">
-                <button class="m-btn m-btn-sm" id="mobileMuteBtn" title="Mute / Unmute" aria-label="Mute or Unmute">
-                  <svg id="mMuteIconOn" viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
-                  <svg id="mMuteIconOff" viewBox="0 0 24 24" width="20" height="20" fill="currentColor" style="display:none;"><path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27l4.73 4.73H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/></svg>
-                </button>
-                <button class="m-btn m-btn-chip" id="mobileSpeedBtn" title="Playback Speed">1x</button>
-                <button class="m-btn m-btn-sm" id="mobilePipBtn" title="Picture in Picture" aria-label="Picture in Picture">
-                  <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M19 11h-8v6h8v-6zm4 8V5c0-1.1-.9-2-2-2H3c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2zm-2 0H3V5h18v14z"/></svg>
-                </button>
-                <button class="m-btn m-btn-sm" id="mobileFullscreenBtn" title="Fullscreen" aria-label="Toggle Fullscreen">
-                  <svg id="mFsEnterIcon" viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg>
-                  <svg id="mFsExitIcon" viewBox="0 0 24 24" width="20" height="20" fill="currentColor" style="display:none;"><path d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z"/></svg>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+      <div id="video-container"></div>
     </div>
 
-    <div class="sidebar" id="sidebarEl">
-
-      <!-- Mobile Drawer Header -->
-      <div class="mobile-drawer-header">
-        <div class="mobile-drawer-title">📁 Video Files</div>
-        <button class="drawer-close-btn" id="closeSidebarBtn" aria-label="Close files drawer">✕</button>
-      </div>
+    <div class="sidebar">
 
       <!-- Tabs -->
       <div class="sidebar-tabs">
@@ -1035,9 +266,6 @@
 
       <!-- Local Panel -->
       <div id="localPanel" style="display:flex; flex-direction:column; flex:1; overflow:hidden;">
-        <div class="mobile-local-actions">
-          <button class="mobile-load-btn" onclick="folderPicker.click()">📂 Open Videos / Folder</button>
-        </div>
         <input type="text" id="search" class="search-bar" placeholder="🔍 Search...">
         <div id="playlist"></div>
       </div>
@@ -1114,10 +342,6 @@ function autoDetectAndResize() {
     resBadge.textContent = `📐 ${vw} × ${vh}`;
     inputW.value = vw;
     inputH.value = vh;
-    const mRes = document.getElementById("mobileResBadge");
-    if (mRes) mRes.textContent = `📐 ${vw} × ${vh}`;
-    const sRes = document.getElementById("settingsResInfo");
-    if (sRes) sRes.textContent = `Resolution: ${vw} × ${vh}`;
 
     // Fit inside available player area keeping aspect ratio
     const section  = document.querySelector(".player-section");
@@ -1245,10 +469,6 @@ function initPlayer(url, time = 0) {
       }
     }
   });
-
-  if (typeof bindMobilePlayer === "function") {
-    bindMobilePlayer(player);
-  }
 }
 
 initPlayer(null);
@@ -1477,11 +697,6 @@ function playVideo(i) {
   currentIndex = i;
   highlightActive(i);
   currentUrl = URL.createObjectURL(files[i]);
-  const titleEl = document.getElementById("mobileVideoTitle");
-  if (titleEl) titleEl.textContent = files[i].name;
-  if (window.innerWidth <= 768 && typeof closeSidebarDrawer === "function") {
-    closeSidebarDrawer();
-  }
   if (player) {
     const type = getVideoMime(currentUrl, files[i]);
     player.src({ src: currentUrl, type });
@@ -1578,11 +793,6 @@ function buildServerList() {
         itemEl.classList.add("active");
 
         currentUrl = videoUrl;
-        const titleEl = document.getElementById("mobileVideoTitle");
-        if (titleEl) titleEl.textContent = fileName;
-        if (window.innerWidth <= 768 && typeof closeSidebarDrawer === "function") {
-          closeSidebarDrawer();
-        }
         if (player) {
           player.src({ src: videoUrl, type: "video/mp4" });
           player.play().catch(() => {});
@@ -1614,6 +824,7 @@ function toggleLoop() {
     loopBtn.style.backgroundColor = loop1Only ? "#16a34a" : "#475569";
     loopBtn.style.background = loop1Only ? "#16a34a" : "#475569";
   }
+<<<<<<< HEAD
 <<<<<<< HEAD
   var settingsLoopBtn = document.getElementById("settingsLoopBtn");
   if (settingsLoopBtn) {
@@ -2388,6 +1599,8 @@ if (fitContainChip) {
 =======
   alert("toggleLoop called! loop1Only=" + loop1Only);
 >>>>>>> parent of cee9208 (new fwture)
+=======
+>>>>>>> parent of ae6edc6 (phone)
 }
 
 const loopBtnEl = document.getElementById("loopBtn");
@@ -2396,6 +1609,7 @@ if (loopBtnEl) {
 }
 
 </script>
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 
@@ -2484,5 +1698,7 @@ if (loopBtnEl) {
 >>>>>>> parent of e7bec45 (tr1)
 =======
 >>>>>>> parent of cee9208 (new fwture)
+=======
+>>>>>>> parent of ae6edc6 (phone)
 </body>
 </html>
