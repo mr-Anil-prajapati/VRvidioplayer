@@ -6,7 +6,6 @@
 <title>VR / Normal Video Player</title>
 <link href="https://vjs.zencdn.net/8.10.0/video-js.css" rel="stylesheet" />
 <link href="https://unpkg.com/videojs-vr/dist/videojs-vr.css" rel="stylesheet">
-<link href="local-video.css" rel="stylesheet">
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: Arial; background: #111; color: #fff; height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
@@ -880,7 +879,7 @@
 
     <button class="ctrl-btn" id="modeBtn">🔄 VR Mode</button>
     <button class="ctrl-btn" id="loadBtn">📁 Load</button>
-    <input type="file" id="folderPicker" webkitdirectory directory multiple accept="video/*,.mov,.mp4,.webm,.ogg,.m4v,.xyz" style="display:none;">
+    <input type="file" id="folderPicker" webkitdirectory directory multiple accept="video/*,.mov,.mp4,.webm,.ogg,.m4v" style="display:none;">
 
     <div class="divider"></div>
 
@@ -1160,7 +1159,6 @@ function getVideoMime(url, file) {
     if (name.endsWith('.webm')) return 'video/webm';
     if (name.endsWith('.ogg')) return 'video/ogg';
     if (name.endsWith('.m4v')) return 'video/mp4';
-    if (name.endsWith('.xyz')) return 'video/mp4';
     if (file.type && file.type !== 'video/quicktime') return file.type;
     // For .mov / video/quicktime, try mp4 — modern Chrome can play many .mov files
     if (file.type === 'video/quicktime') return 'video/mp4';
@@ -1174,7 +1172,6 @@ function getVideoMime(url, file) {
       case 'ogg': return 'video/ogg';
       case 'mov': return 'video/mp4'; // treat .mov as mp4 for browser
       case 'm4v': return 'video/mp4';
-      case 'xyz': return 'video/mp4';
       default: return 'video/mp4'; // safe default
     }
   } catch(e) {
@@ -1393,8 +1390,7 @@ folderPicker.addEventListener("change", (e) => {
   files = Array.from(e.target.files).filter(f =>
     f.type.startsWith("video/") ||
     f.name.toLowerCase().endsWith(".mov") ||
-    f.name.toLowerCase().endsWith(".m4v") ||
-    f.name.toLowerCase().endsWith(".xyz")
+    f.name.toLowerCase().endsWith(".m4v")
   );
   if (!files.length) return alert("No video files found!");
   buildPlaylist();
@@ -1618,6 +1614,7 @@ function toggleLoop() {
     loopBtn.style.backgroundColor = loop1Only ? "#16a34a" : "#475569";
     loopBtn.style.background = loop1Only ? "#16a34a" : "#475569";
   }
+<<<<<<< HEAD
   var settingsLoopBtn = document.getElementById("settingsLoopBtn");
   if (settingsLoopBtn) {
     settingsLoopBtn.textContent = loop1Only ? "🔁 Loop: 1 Video" : "🔁 Loop: OFF";
@@ -2388,8 +2385,18 @@ if (fitContainChip) {
     const vid = videoContainer.querySelector("video");
     if (vid) vid.style.objectFit = "contain";
   });
+=======
+  alert("toggleLoop called! loop1Only=" + loop1Only);
+>>>>>>> parent of cee9208 (new fwture)
 }
+
+const loopBtnEl = document.getElementById("loopBtn");
+if (loopBtnEl) {
+  loopBtnEl.addEventListener("click", toggleLoop);
+}
+
 </script>
+<<<<<<< HEAD
 <<<<<<< HEAD
 
   <!-- Drawer Backdrop for mobile -->
@@ -2475,5 +2482,7 @@ if (fitContainChip) {
 =======
 <script src="local-video.js"></script>
 >>>>>>> parent of e7bec45 (tr1)
+=======
+>>>>>>> parent of cee9208 (new fwture)
 </body>
 </html>
