@@ -2,6 +2,15 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#111111">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="application-name" content="VR Player">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
 <title>VR / Normal Video Player</title>
 <link href="https://vjs.zencdn.net/8.10.0/video-js.css" rel="stylesheet" />
 <link href="https://unpkg.com/videojs-vr/dist/videojs-vr.css" rel="stylesheet">
@@ -607,6 +616,12 @@ document.getElementById("speedSelect").addEventListener("change", (e) => {
 // ══════════════════════════════
 //  FOLDER & PLAYLIST
 // ══════════════════════════════
+// On mobile devices, allow direct file picking from storage/gallery
+if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+  folderPicker.removeAttribute("webkitdirectory");
+  folderPicker.removeAttribute("directory");
+}
+
 document.getElementById("loadBtn").addEventListener("click", () => folderPicker.click());
 
 folderPicker.addEventListener("change", (e) => {
@@ -831,5 +846,17 @@ function toggleLoop() {
 }
 </script>
 <script src="local-video.js"></script>
+<script src="network-panel.js"></script>
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function() {
+    navigator.serviceWorker.register('./sw.js').then(function(reg) {
+      console.log('PWA ServiceWorker registered with scope:', reg.scope);
+    }).catch(function(err) {
+      console.log('PWA ServiceWorker registration failed:', err);
+    });
+  });
+}
+</script>
 </body>
 </html>

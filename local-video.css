@@ -1,0 +1,15 @@
+/* local-video.css - custom mobile/local styles */
+@media (max-width: 768px) {
+  .controls-bar {
+    padding: 6px;
+    gap: 4px;
+  }
+  .ctrl-btn {
+    padding: 6px 8px;
+    font-size: 11px;
+  }
+  .sidebar {
+    width: 220px;
+    min-width: 180px;
+  }
+}
