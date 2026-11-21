@@ -276,7 +276,14 @@
 
       <!-- Local Panel -->
       <div id="localPanel" style="display:flex; flex-direction:column; flex:1; overflow:hidden;">
-        <input type="text" id="search" class="search-bar" placeholder="🔍 Search...">
+        <div id="folderBar" style="display:flex; gap:6px; padding:6px 8px; background:#1a1a1a; border-bottom:1px solid #2e2e2e; align-items:center;">
+          <label style="font-size:11px; color:#aaa; font-weight:bold; white-space:nowrap;">📂 Folder:</label>
+          <select id="folderSelect" style="flex:1; background:#111; color:#fff; border:1px solid #444; border-radius:4px; padding:4px 6px; font-size:11px; outline:none; text-overflow:ellipsis;">
+            <option value="__ALL__">All Folders (Loading...)</option>
+          </select>
+          <button id="rescanBtn" title="Rescan Folders & SD Card" style="padding:4px 8px; font-size:11px; background:#333; color:#fff; border:1px solid #555; border-radius:4px; cursor:pointer;">🔄</button>
+        </div>
+        <input type="text" id="search" class="search-bar" placeholder="🔍 Search video name...">
         <div id="playlist"></div>
       </div>
 
@@ -420,7 +427,7 @@ function initPlayer(url, time = 0) {
 
   videoContainer.innerHTML = `
     <video id="player" class="video-js vjs-default-skin vjs-big-play-centered"
-      controls crossorigin="anonymous" playsinline></video>`;
+      controls crossorigin="anonymous" playsinline preload="auto"></video>`;
 
   player = videojs("player", {
     playbackRates: [0.25, 0.5, 0.75, 1, 1.25, 1.5, 2, 3, 4]
@@ -693,29 +700,62 @@ function buildPlaylist() {
     item.className = "video-item";
 
     const prev = document.createElement("video");
-    prev.src   = URL.createObjectURL(file);
     prev.muted = true;
     prev.loop  = true;
+    prev.playsInline = true;
+    prev.preload = "none";
 
-    item.addEventListener("mouseenter", () => prev.play().catch(() => {}));
-    item.addEventListener("mouseleave", () => { prev.pause(); prev.currentTime = 0; });
+    // Play preview on hover
+    item.addEventListener("mouseenter", () => {
+      if (!prev.src) {
+        prev.src = file.isUrl ? file.url : URL.createObjectURL(file);
+      }
+      prev.play().catch(() => {});
+    });
+
+    item.addEventListener("mouseleave", () => {
+      prev.pause();
+      prev.currentTime = 0;
+    });
+
+    // Touch preview for mobile
+    item.addEventListener("touchstart", () => {
+      if (!prev.src) {
+        prev.src = file.isUrl ? file.url : URL.createObjectURL(file);
+      }
+      prev.play().catch(() => {});
+    }, { passive: true });
 
     const lbl = document.createElement("span");
     lbl.textContent = `${i + 1}. ${file.name}`;
+
+    if (file.folder || file.size) {
+      const meta = document.createElement("div");
+      meta.style.fontSize = "10px";
+      meta.style.color = "#888";
+      meta.style.marginTop = "3px";
+      const sizeStr = file.size ? (file.size > 1024 * 1024 ? (file.size / (1024 * 1024)).toFixed(1) + " MB" : (file.size / 1024).toFixed(0) + " KB") : "";
+      meta.textContent = `${file.folder ? "[" + file.folder + "] " : ""}${sizeStr}`;
+      lbl.appendChild(meta);
+    }
 
     item.appendChild(prev);
     item.appendChild(lbl);
     playlistEl.appendChild(item);
     item.addEventListener("click", () => playVideo(i));
   });
-  highlightActive(0);
+  highlightActive(currentIndex || 0);
 }
 
 function playVideo(i) {
   if (!files[i]) return;
   currentIndex = i;
   highlightActive(i);
-  currentUrl = URL.createObjectURL(files[i]);
+  if (files[i].isUrl) {
+    currentUrl = files[i].url;
+  } else {
+    currentUrl = URL.createObjectURL(files[i]);
+  }
   if (player) {
     const type = getVideoMime(currentUrl, files[i]);
     player.src({ src: currentUrl, type });
@@ -844,6 +884,88 @@ function toggleLoop() {
     loopBtn.style.background = loop1Only ? "#16a34a" : "#475569";
   }
 }
+
+// ══════════════════════════════
+//  OFFLINE TUBE AUTO-SERVER CONNECT
+// ══════════════════════════════
+let allServerVideos = [];
+
+async function initOfflineTube() {
+  const folderSelect = document.getElementById("folderSelect");
+  const rescanBtn    = document.getElementById("rescanBtn");
+
+  async function loadData() {
+    try {
+      const fRes = await fetch("/api/folders");
+      if (!fRes.ok) return;
+      const fData = await fRes.json();
+
+      if (folderSelect) {
+        folderSelect.innerHTML = `<option value="__ALL__">📂 All Folders (${fData.total_videos || 0})</option>`;
+        (fData.folders || []).forEach(f => {
+          const opt = document.createElement("option");
+          opt.value = f.key;
+          opt.textContent = `${f.name} (${f.count})`;
+          folderSelect.appendChild(opt);
+        });
+      }
+
+      const vRes = await fetch("/api/videos");
+      if (!vRes.ok) return;
+      const vData = await vRes.json();
+      allServerVideos = vData.videos || [];
+
+      renderFolderVideos("__ALL__");
+    } catch (e) {
+      console.log("OfflineTube: Running in standalone or external mode");
+    }
+  }
+
+  function renderFolderVideos(selectedKey) {
+    let list = allServerVideos;
+    if (selectedKey && selectedKey !== "__ALL__") {
+      list = allServerVideos.filter(v => v.folder_key === selectedKey || v.folder === selectedKey);
+    }
+
+    files = list.map(v => ({
+      name: v.name,
+      url: v.url,
+      size: v.size,
+      folder: v.folder,
+      storage: v.storage,
+      isUrl: true
+    }));
+
+    buildPlaylist();
+    if (files.length > 0) {
+      playVideo(0);
+    }
+  }
+
+  if (folderSelect) {
+    folderSelect.addEventListener("change", (e) => {
+      renderFolderVideos(e.target.value);
+    });
+  }
+
+  if (rescanBtn) {
+    rescanBtn.addEventListener("click", async () => {
+      rescanBtn.textContent = "⏳";
+      try {
+        await fetch("/api/rescan");
+        await loadData();
+      } catch (err) {
+        alert("Rescan error: " + err);
+      } finally {
+        rescanBtn.textContent = "🔄";
+      }
+    });
+  }
+
+  loadData();
+}
+
+window.addEventListener("DOMContentLoaded", initOfflineTube);
 </script>
 <script src="local-video.js"></script>
 <script src="network-panel.js"></script>
