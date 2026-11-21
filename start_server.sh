@@ -10,6 +10,9 @@ pkill -f "server.py" 2>/dev/null || true
 pkill -f "offline_server.py" 2>/dev/null || true
 sleep 1
 
-# Start universal server
+# Start universal server in background
 echo "[OfflineTube] Starting server on http://localhost:8080 ..."
-python3 server.py 8080
+nohup python3 server.py 8080 > server.log 2>&1 &
+sleep 2
+echo "Server running! PID: $(pgrep -f 'server.py')"
+cat server.log | head -n 10
