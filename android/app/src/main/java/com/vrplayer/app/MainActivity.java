@@ -152,16 +152,22 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onHideCustomView() {
-                if (customView == null) return;
-                customViewContainer.removeView(customView);
-                customViewContainer.setVisibility(View.GONE);
-                customView = null;
-                customViewCallback.onCustomViewHidden();
-                webView.setVisibility(View.VISIBLE);
-
-                getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_VISIBLE);
+                hideCustomView();
             }
         });
+    }
+
+    private void hideCustomView() {
+        if (customView == null) return;
+        customViewContainer.removeView(customView);
+        customViewContainer.setVisibility(View.GONE);
+        customView = null;
+        if (customViewCallback != null) {
+            customViewCallback.onCustomViewHidden();
+            customViewCallback = null;
+        }
+        webView.setVisibility(View.VISIBLE);
+        getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_VISIBLE);
     }
 
     @Override
@@ -189,7 +195,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public void onBackPressed() {
         if (customView != null) {
-            webView.getWebChromeClient().onHideCustomView();
+            hideCustomView();
         } else if (webView.canGoBack()) {
             webView.goBack();
         } else {
