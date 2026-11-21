@@ -1,11 +1,15 @@
 #!/data/data/com.termux/files/usr/bin/bash
-cd /data/data/com.termux/files/home/offline-youtube
+# VR Video Player & OfflineTube - Startup Script for Termux / Linux
+cd "$(dirname "$0")"
+
+# Acquire wake lock on Android Termux
+which termux-wake-lock >/dev/null 2>&1 && termux-wake-lock
+
+# Stop previous instance if running
+pkill -f "server.py" 2>/dev/null || true
 pkill -f "offline_server.py" 2>/dev/null || true
 sleep 1
-nohup python3 offline_server.py 8080 > server.log 2>&1 &
-sleep 2
-echo "=== Server Log ==="
-cat server.log
-echo "=== Testing API Status ==="
-curl -s http://localhost:8080/api/status
-echo ""
+
+# Start universal server
+echo "[OfflineTube] Starting server on http://localhost:8080 ..."
+python3 server.py 8080
