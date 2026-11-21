@@ -1,0 +1,22 @@
+# Android & Gradle
+.gradle/
+build/
+app/build/
+*.apk
+*.aab
+local.properties
+.cxx/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# OS
+Thumbs.db
+.DS_Store
